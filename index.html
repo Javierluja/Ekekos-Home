@@ -1178,7 +1178,7 @@ function saveConfig(){
   document.querySelectorAll('#cfg-members input').forEach((inp,i)=>{if(S.members[i])S.members[i].name=inp.value||S.members[i].name;});
   saveState();
   showToast('¡Configuración guardada! 🏠');
-  pop();
+  if(S.stack.length > 0) pop(); else goTab('home');
 }
 
 // ══════════════════════════════════════════
@@ -1210,7 +1210,7 @@ async function unirseHogar(e) {
     localStorage.setItem('ekekos_house_id', houseId);
     S = check.data();
     subscribeToHouse(houseId);
-    render('home');
+    goTab('home');
     showToast('¡Conectado al hogar!');
   } catch(err){
     console.error(err);
@@ -1264,8 +1264,7 @@ function showToast(msg){
     const LS = localStorage.getItem('ekekos_prod_state');
     if (LS) S = JSON.parse(LS);
     subscribeToHouse(houseId);
-    if(S.members.length===0) S.tab='config';
-    render(S.tab);
+    if(S.members.length===0) { S.tab='config'; render('config'); } else { goTab(S.tab); }
   } else {
     render('ingreso');
   }
