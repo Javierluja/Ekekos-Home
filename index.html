@@ -273,12 +273,12 @@ let unsubSnapshot = null;
 let docRef = null;
 
 function subscribeToHouse(code) {
+  if(!code) return;
   if(unsubSnapshot) unsubSnapshot();
   docRef = db.collection('houses').doc(code);
   let isInitialLoad = true;
   unsubSnapshot = docRef.onSnapshot((docSnap) => {
-    // Si estamos en medio de una configuración inicial, ignoramos actualizaciones externas
-    // para evitar que datos por defecto (como "Nombre de la Familia") nos borren lo que el usuario escribe.
+    // Si estamos configurando localmente, NO permitimos que el servidor nos pise los datos
     if (S._isConfiguring) return;
 
     if (docSnap.exists) {
@@ -294,10 +294,12 @@ function subscribeToHouse(code) {
         render(S.tab);
       }
     } else {
-      // Solo creamos el documento si NO estamos configurando localmente (evitar ruidos)
+      // Solo creamos en DB si NO estamos en proceso de configuración inicial
       if (!S._isConfiguring) docRef.set(S);
     }
     isInitialLoad = false;
+  }, (err) => {
+    console.error("Firestore error:", err);
   });
 }
 
@@ -1249,38 +1251,41 @@ function saveConfig(){
   
   if(houseId) addToHistory(houseId, S.house.name);
   
-  // Finalizar configuración: permitimos que los snapshots vuelvan a sincronizar
+  // Limpieza de flag y guardado final
   delete S._isConfiguring;
-  
   saveState();
+  
   showToast('¡Configuración guardada! 🏠');
   
-  // Forzar navegación al inicio
+  // Navegación inmediata
   S.tab = 'home';
   S.stack = [];
-  goTab('home');
+  setTimeout(() => {
+    goTab('home');
+  }, 100);
 }
 
 // ══════════════════════════════════════════
 //  MULTI-TENANT AUTH
 // ══════════════════════════════════════════
 function crearHogar() {
+  // Limpieza profunda de preventivo
+  localStorage.removeItem('ekekos_house_id');
+  localStorage.removeItem('ekekos_prod_state');
+  
   const code = 'HK-' + Math.random().toString(36).substring(2, 6).toUpperCase();
   houseId = code;
   localStorage.setItem('ekekos_house_id', houseId);
   
-  // Marca de configuración para evitar carreras de datos con Firebase
+  // Nuevo estado con flag de protección
   S = JSON.parse(JSON.stringify(defaultS));
   S._isConfiguring = true;
   S.members = [{id:0, name:'Tu Nombre', em:'👱‍♀️', color:'#4edea3'}];
   
-  addToHistory(houseId, 'Nueva Familia');
-  
   subscribeToHouse(houseId);
   S.tab = 'config';
-  // El primer write lo hacemos nosotros al darle a "Listo", no el listener
   render('config');
-  showToast('¡Hogar '+code+' creado!');
+  showToast('¡Hogar '+code+' creado! 🎉');
 }
 
 async function unirseHogar(e) {
@@ -1388,30 +1393,27 @@ function showToast(msg){
   const now=new Date();
   S.filters.mes=MESES[now.getMonth()];
   
+  // Solo intentamos cargar si hay un ID y un estado local previo válido
   if (houseId) {
     const LS = localStorage.getItem('ekekos_prod_state');
     if (LS) { 
       const parsed = JSON.parse(LS);
-      // Solo restauramos si hay integración mínima válida
       if (parsed.members && parsed.members.length > 0) {
         S = parsed;
         S.tab = 'home';
         S.stack = [];
-      } else {
-        // Estado incompleto, mejor mandarlo al Portal
-        localStorage.removeItem('ekekos_house_id');
-        houseId = null;
+        subscribeToHouse(houseId);
+        goTab('home');
+        return;
       }
     }
-    if (houseId) {
-      subscribeToHouse(houseId);
-      goTab('home');
-    } else {
-      render('ingreso');
-    }
-  } else {
-    render('ingreso');
+    // Si houseId existe pero no hay datos locales, limpiamos y vamos a Bienvenida
+    // para evitar creaciones automáticas de "familias fantasma".
+    localStorage.removeItem('ekekos_house_id');
+    houseId = null;
   }
+  
+  render('ingreso');
 })();
 </script>
 </body>
