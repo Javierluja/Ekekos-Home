@@ -1241,6 +1241,10 @@ function saveConfig(){
   const c=document.getElementById('cfg-cur')?.value||'CLP';
   S.house.name=n; S.house.currency=c;
   document.querySelectorAll('#cfg-members input').forEach((inp,i)=>{if(S.members[i])S.members[i].name=inp.value||S.members[i].name;});
+  
+  // Sincronizar historial inmediatamente para que el Portal vea el nuevo nombre
+  if(houseId) addToHistory(houseId, S.house.name);
+  
   saveState();
   showToast('¡Configuración guardada! 🏠');
   if(S.stack.length > 0) pop(); else goTab('home');
@@ -1255,8 +1259,13 @@ function crearHogar() {
   localStorage.setItem('ekekos_house_id', houseId);
   S = JSON.parse(JSON.stringify(defaultS));
   S.members = [{id:0, name:'Tu Nombre', em:'👱‍♀️', color:'#4edea3'}];
+  
+  // Agregar al historial de inmediato incluso con nombre por defecto
+  addToHistory(houseId, S.house.name);
+  
   subscribeToHouse(houseId);
   S.tab = 'config';
+  // Guardar estado inicial para que exista en DB antes del primer cambio
   saveState();
   render('config');
   showToast('¡Hogar '+code+' creado!');
