@@ -277,6 +277,10 @@ function subscribeToHouse(code) {
   docRef = db.collection('houses').doc(code);
   let isInitialLoad = true;
   unsubSnapshot = docRef.onSnapshot((docSnap) => {
+    // Si estamos en medio de una configuración inicial, ignoramos actualizaciones externas
+    // para evitar que datos por defecto (como "Nombre de la Familia") nos borren lo que el usuario escribe.
+    if (S._isConfiguring) return;
+
     if (docSnap.exists) {
       const dbS = docSnap.data();
       const localTab = S.tab;
@@ -290,7 +294,8 @@ function subscribeToHouse(code) {
         render(S.tab);
       }
     } else {
-      docRef.set(S);
+      // Solo creamos el documento si NO estamos configurando localmente (evitar ruidos)
+      if (!S._isConfiguring) docRef.set(S);
     }
     isInitialLoad = false;
   });
@@ -1237,17 +1242,23 @@ function removeMember(idx){
   renderConfigMembers();
 }
 function saveConfig(){
-  const n=document.getElementById('cfg-name')?.value||'Mi Casa';
+  const n=(document.getElementById('cfg-name')?.value||'').trim() || 'Mi Familia';
   const c=document.getElementById('cfg-cur')?.value||'CLP';
   S.house.name=n; S.house.currency=c;
   document.querySelectorAll('#cfg-members input').forEach((inp,i)=>{if(S.members[i])S.members[i].name=inp.value||S.members[i].name;});
   
-  // Sincronizar historial inmediatamente para que el Portal vea el nuevo nombre
   if(houseId) addToHistory(houseId, S.house.name);
+  
+  // Finalizar configuración: permitimos que los snapshots vuelvan a sincronizar
+  delete S._isConfiguring;
   
   saveState();
   showToast('¡Configuración guardada! 🏠');
-  if(S.stack.length > 0) pop(); else goTab('home');
+  
+  // Forzar navegación al inicio
+  S.tab = 'home';
+  S.stack = [];
+  goTab('home');
 }
 
 // ══════════════════════════════════════════
@@ -1257,16 +1268,17 @@ function crearHogar() {
   const code = 'HK-' + Math.random().toString(36).substring(2, 6).toUpperCase();
   houseId = code;
   localStorage.setItem('ekekos_house_id', houseId);
+  
+  // Marca de configuración para evitar carreras de datos con Firebase
   S = JSON.parse(JSON.stringify(defaultS));
+  S._isConfiguring = true;
   S.members = [{id:0, name:'Tu Nombre', em:'👱‍♀️', color:'#4edea3'}];
   
-  // Agregar al historial de inmediato incluso con nombre por defecto
-  addToHistory(houseId, S.house.name);
+  addToHistory(houseId, 'Nueva Familia');
   
   subscribeToHouse(houseId);
   S.tab = 'config';
-  // Guardar estado inicial para que exista en DB antes del primer cambio
-  saveState();
+  // El primer write lo hacemos nosotros al darle a "Listo", no el listener
   render('config');
   showToast('¡Hogar '+code+' creado!');
 }
