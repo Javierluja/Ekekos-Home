@@ -1173,7 +1173,11 @@ function renderCharts(){
 //  CONFIG LOGIC
 // ══════════════════════════════════════════
 function initConfig(){
-  renderConfigMembers();
+  if(S.members.length === 0) {
+    addMember();
+  } else {
+    renderConfigMembers();
+  }
 }
 function renderConfigMembers(){
   const el=document.getElementById('cfg-members');
