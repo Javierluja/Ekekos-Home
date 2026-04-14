@@ -1249,43 +1249,49 @@ function saveConfig(){
   S.house.name=n; S.house.currency=c;
   document.querySelectorAll('#cfg-members input').forEach((inp,i)=>{if(S.members[i])S.members[i].name=inp.value||S.members[i].name;});
   
+  // Persistir el ID oficialmente tras completar la configuración
+  if(S._tempId) {
+    houseId = S._tempId;
+    localStorage.setItem('ekekos_house_id', houseId);
+    delete S._tempId;
+  }
+  
   if(houseId) addToHistory(houseId, S.house.name);
   
-  // Limpieza de flag y guardado final
+  // Salir de modo configuración y guardar
   delete S._isConfiguring;
   saveState();
   
   showToast('¡Configuración guardada! 🏠');
   
-  // Navegación inmediata
+  // Navegación inmediata a Home
   S.tab = 'home';
   S.stack = [];
   setTimeout(() => {
     goTab('home');
-  }, 100);
+  }, 50);
 }
 
 // ══════════════════════════════════════════
 //  MULTI-TENANT AUTH
 // ══════════════════════════════════════════
 function crearHogar() {
-  // Limpieza profunda de preventivo
-  localStorage.removeItem('ekekos_house_id');
-  localStorage.removeItem('ekekos_prod_state');
-  
+  // NO guardamos houseId en localStorage todavía para evitar "familias fantasma"
   const code = 'HK-' + Math.random().toString(36).substring(2, 6).toUpperCase();
-  houseId = code;
-  localStorage.setItem('ekekos_house_id', houseId);
   
-  // Nuevo estado con flag de protección
+  // Estado inicial temporal
   S = JSON.parse(JSON.stringify(defaultS));
   S._isConfiguring = true;
+  S._tempId = code; // ID temporal hasta que se guarde el config
   S.members = [{id:0, name:'Tu Nombre', em:'👱‍♀️', color:'#4edea3'}];
   
-  subscribeToHouse(houseId);
+  // Limpiamos referencias previas
+  if(unsubSnapshot) unsubSnapshot();
+  docRef = db.collection('houses').doc(code);
+  
   S.tab = 'config';
   render('config');
-  showToast('¡Hogar '+code+' creado! 🎉');
+  showToast('¡Configuración lista! 🎉');
 }
 
 async function unirseHogar(e) {
@@ -1326,13 +1332,19 @@ async function switchHogar(code) {
 }
 
 function shareCode() {
-  const code = houseId || '';
+  const code = houseId || S._tempId || '';
   if(!code) return showToast('Error: No hay código');
+  
   const text = `¡Únete a mi hogar en Ekekos Home! 🏠\nUsa este código: ${code}`;
+  
+  // Siempre intentamos copiar primero como acción garantizada
+  copyToClipboard(code);
+  
+  // Intentamos compartir si es posible (menú nativo móvil)
   if (navigator.share) {
-    navigator.share({ title: 'Ekekos Home', text: text }).catch(() => copyToClipboard(code));
-  } else {
-    copyToClipboard(code);
+    setTimeout(() => {
+      navigator.share({ title: 'Ekekos Home', text: text }).catch(() => {});
+    }, 100);
   }
 }
 
