@@ -1,7 +1,7 @@
 {
   "name": "Ekekos Home",
   "short_name": "Ekekos",
-  "start_url": "/app.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#101415",
   "theme_color": "#4edea3",

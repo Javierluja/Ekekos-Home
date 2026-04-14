@@ -1,6 +1,7 @@
 const CACHE_NAME = 'ekekos-cache-v1';
 const urlsToCache = [
-  '/app.html',
+  '/',
+  '/index.html',
   '/manifest.json'
 ];
 
