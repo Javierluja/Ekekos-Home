@@ -224,7 +224,7 @@ const defaultS = {
   tab:'home',
   stack:[],
   currentUser:0,
-  house:{name:'La Buena Onda',currency:'CLP'},
+  house:{name:'Nombre de la Familia',currency:'CLP'},
   members:[
     {id:0,name:'Anita',em:'👱‍♀️',color:'#4edea3'},
     {id:1,name:'Carlos',em:'👨',color:'#bec6e0'},
@@ -310,7 +310,7 @@ const CATS=[
   {id:'super',label:'Súper',em:'🛒'},
   {id:'cuentas',label:'Cuentas',em:'⚡'},
   {id:'bolidos',label:'Bólidos',em:'🚗'},
-  {id:'restaurante',label:'Restaurante',em:'🍽️'},
+  {id:'comida',label:'Comida',em:'🍽️'},
   {id:'salud',label:'Salud',em:'💊'},
   {id:'carrete',label:'Carrete',em:'🎬'}
 ];
@@ -484,10 +484,10 @@ config:()=>`
   </div>
   <div style="flex:1;padding:28px 0;display:flex;flex-direction:column;gap:22px">
     <div>
-      <label class="lbl">Nombre de la Casa</label>
+      <label class="lbl">Nombre de la Familia</label>
       <div style="position:relative">
         <span class="mi" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--outline);font-size:20px">home</span>
-        <input class="inp" id="cfg-name" type="text" placeholder="Ej: La Buena Onda" style="padding-left:44px" value="${S.house.name}">
+        <input class="inp" id="cfg-name" type="text" placeholder="Ej: Familia Real" style="padding-left:44px" value="${S.house.name}">
       </div>
     </div>
     <div>
@@ -686,8 +686,8 @@ agregar:()=>{
     </div>
     <!-- Category -->
     <p style="font-size:13px;font-weight:700;color:var(--on-surface-v);margin-bottom:10px">Categoría</p>
-    <div id="a-cats" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
-      ${CATS.map(c=>`<div class="cat-chip ${c.id===S.selCat?'on':''}" onclick="selCat('${c.id}',this)" style="flex:1;min-width:70px"><span class="ci">${c.em}</span>${c.label}</div>`).join('')}
+    <div id="a-cats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+      ${CATS.map(c=>`<div class="cat-chip ${c.id===S.selCat?'on':''}" onclick="selCat('${c.id}',this)" style="padding:10px 4px;font-size:9px"><span class="ci" style="font-size:20px">${c.em}</span>${c.label}</div>`).join('')}
     </div>
     <!-- Description -->
     <div style="margin-bottom:16px">
@@ -1212,8 +1212,8 @@ function renderConfigMembers(){
   if(!el)return;
   const EMOJIS=['👩','👨','👱‍♀️','👦','👧','🧑'];
   el.innerHTML=S.members.map((m,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:14px;padding:12px 14px">
-      <select class="inp" onchange="S.members[${i}].em=this.value;saveState()" style="background:rgba(255,255,255,0.05);color:inherit;border:1px solid var(--outline-v);border-radius:8px;font-size:22px;padding:2px 4px;cursor:pointer;outline:none">
+    <div style="display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:14px;padding:8px 12px">
+      <select class="inp" onchange="S.members[${i}].em=this.value;saveState()" style="background:var(--surface-high);color:inherit;border:1.5px solid var(--outline-v);border-radius:10px;font-size:16px;padding:2px;cursor:pointer;outline:none;width:38px;height:38px;text-align:center;display:flex;align-items:center;justify-content:center">
         ${EMOJIS.map(e=>`<option value="${e}" ${m.em===e?'selected':''}>${e}</option>`).join('')}
       </select>
       <input style="flex:1;background:none;border:none;color:var(--on-surface);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;outline:none" value="${m.name}" onchange="S.members[${i}].name=this.value" placeholder="Nombre">
