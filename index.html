@@ -266,7 +266,14 @@ function addToHistory(code, name) {
   let hist = JSON.parse(localStorage.getItem('ekekos_history')||'[]');
   hist = hist.filter(x => x.code !== code);
   hist.unshift({code, name});
+  localStorage.setItem('ekekos_history', JSON.stringify(hist.slice(0, 10)));
+}
+function removeFromHistory(code) {
+  if(!confirm('¿Eliminar de la lista de familias recientes?')) return;
+  let hist = JSON.parse(localStorage.getItem('ekekos_history')||'[]');
+  hist = hist.filter(x => x.code !== code);
   localStorage.setItem('ekekos_history', JSON.stringify(hist));
+  render('ingreso');
 }
 
 let unsubSnapshot = null;
@@ -440,15 +447,19 @@ ingreso:()=>{
       <h2 style="font-size:12px;font-weight:700;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;color:var(--accent)">Tus Grupos y Familias</h2>
       <div style="display:flex;flex-direction:column;gap:10px">
         ${hist.map(h=>`
-          <div onclick="switchHogar('${h.code}')" style="background:var(--surface);border-radius:16px;padding:14px;display:flex;align-items:center;cursor:pointer;border:1px solid transparent;transition:all .2s" onmousedown="this.style.borderColor='var(--accent)'" onmouseup="this.style.borderColor='transparent'">
-            <div style="width:40px;height:40px;border-radius:12px;background:var(--accent)20;display:flex;align-items:center;justify-content:center;margin-right:14px">
-              <span class="mi" style="color:var(--accent);font-size:20px">groups</span>
+          <div style="background:var(--surface);border-radius:16px;padding:12px 14px;display:flex;align-items:center;border:1px solid transparent;position:relative">
+            <div onclick="switchHogar('${h.code}')" style="flex:1;display:flex;align-items:center;cursor:pointer">
+              <div style="width:40px;height:40px;border-radius:12px;background:var(--accent)20;display:flex;align-items:center;justify-content:center;margin-right:12px">
+                <span class="mi" style="color:var(--accent);font-size:20px">groups</span>
+              </div>
+              <div style="flex:1">
+                <p style="font-weight:700;font-size:15px;color:var(--on-surface)">${h.name}</p>
+                <p style="font-size:11px;color:var(--outline);font-family:monospace">${h.code}</p>
+              </div>
             </div>
-            <div style="flex:1">
-              <p style="font-weight:700;font-size:15px;color:var(--on-surface)">${h.name}</p>
-              <p style="font-size:11px;color:var(--outline);font-family:monospace">${h.code}</p>
-            </div>
-            <span class="mi" style="color:var(--outline);font-size:18px">arrow_forward</span>
+            <button onclick="removeFromHistory('${h.code}')" style="background:none;border:none;color:var(--outline);cursor:pointer;padding:8px" title="Quitar de la lista">
+              <span class="mi" style="font-size:18px">delete</span>
+            </button>
           </div>
         `).join('')}
       </div>
@@ -912,18 +923,19 @@ perfil:()=>{
   </div>
 
   <!-- Identidad de Familia (CÓDIGO) -->
-  <div style="margin:0 20px 24px;background:linear-gradient(135deg,var(--surface-high),var(--surface));border-radius:24px;padding:20px;border:1px solid var(--outline-v);position:relative;overflow:hidden">
-    <div style="position:absolute;right:-10px;top:-10px;opacity:0.05"><span class="mi" style="font-size:100px">badge</span></div>
-    <p style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Código de Familia</p>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-      <div style="background:var(--bg);padding:12px 20px;border-radius:16px;border:1px dashed var(--accent);flex:1">
-        <span class="mf" style="font-size:24px;font-weight:800;letter-spacing:2px;color:var(--on-surface)">${houseId || 'S/N'}</span>
+  <div style="margin:0 20px 24px;background:linear-gradient(135deg,var(--surface-high),var(--surface));border-radius:24px;padding:24px;border:1px solid var(--outline-v);position:relative;overflow:hidden">
+    <div style="position:absolute;right:-20px;top:-20px;opacity:0.04"><span class="mi" style="font-size:120px">qr_code_2</span></div>
+    <p style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px">Código de Invitación</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div onclick="copyToClipboard('${houseId||''}')" style="background:var(--bg);padding:16px;border-radius:16px;border:2px dashed var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative" title="Click para copiar">
+        <span class="mf" style="font-size:28px;font-weight:800;letter-spacing:3px;color:var(--on-surface)">${houseId || 'S/N'}</span>
+        <span class="mi" style="position:absolute;right:12px;font-size:18px;color:var(--accent)">content_copy</span>
       </div>
-      <button class="tb-btn" style="background:var(--accent);color:var(--on-accent);width:52px;height:52px;border-radius:16px" onclick="shareCode()">
-        <span class="mi">share</span>
+      <button class="btn btn-accent" style="height:56px;border-radius:16px" onclick="shareCode()">
+        <span class="mi">share</span> Compartir Invitación
       </button>
     </div>
-    <p style="font-size:12px;color:var(--on-surface-v);margin-top:12px;line-height:1.4">Comparte este código para invitar a otros integrantes.</p>
+    <p style="font-size:12px;color:var(--on-surface-v);margin-top:16px;line-height:1.4;text-align:center">Toca el código para copiarlo.</p>
   </div>
 
   <!-- Integrantes -->
@@ -1262,7 +1274,7 @@ function saveConfig(){
   delete S._isConfiguring;
   saveState();
   
-  showToast('¡Configuración guardada! 🏠');
+  showToast('¡Hogar '+houseId+' configurado! 🏠🎉');
   
   // Navegación inmediata a Home
   S.tab = 'home';
@@ -1291,7 +1303,7 @@ function crearHogar() {
   
   S.tab = 'config';
   render('config');
-  showToast('¡Configuración lista! 🎉');
+  // Eliminamos el toast de aquí para que sea silencioso al inicio
 }
 
 async function unirseHogar(e) {
