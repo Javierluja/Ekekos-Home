@@ -270,7 +270,12 @@ function subscribeToHouse(code) {
   let isInitialLoad = true;
   unsubSnapshot = docRef.onSnapshot((docSnap) => {
     if (docSnap.exists) {
-      S = docSnap.data();
+      const dbS = docSnap.data();
+      const localTab = S.tab;
+      const localStack = [...(S.stack||[])];
+      S = dbS;
+      S.tab = localTab;
+      S.stack = localStack;
       localStorage.setItem('ekekos_prod_state', JSON.stringify(S));
       if (!isInitialLoad && typeof render === 'function' && document.getElementById('screen')) {
         render(S.tab);
@@ -285,7 +290,10 @@ function subscribeToHouse(code) {
 function saveState(){
   if(!houseId) return;
   localStorage.setItem('ekekos_prod_state', JSON.stringify(S));
-  docRef.set(S); // Sincroniza con la nube
+  const snap = JSON.parse(JSON.stringify(S)); // clone
+  snap.tab = 'home'; // Enforce safe booting for late joiners
+  snap.stack = [];
+  docRef.set(snap);
 }
 
 const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -1262,7 +1270,7 @@ function showToast(msg){
   
   if (houseId) {
     const LS = localStorage.getItem('ekekos_prod_state');
-    if (LS) S = JSON.parse(LS);
+    if (LS) { S = JSON.parse(LS); S.tab='home'; S.stack=[]; }
     subscribeToHouse(houseId);
     if(S.members.length===0) { S.tab='config'; render('config'); } else { goTab(S.tab); }
   } else {
