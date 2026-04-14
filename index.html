@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<!-- Ekekos Home — App v1.0 — Mobile-first SPA -->
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Ekekos Home</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<style>
+:root{--bg:#101415;--surface:#1d2022;--surface-high:#272a2c;--surface-highest:#323537;--primary:#bec6e0;--accent:#4edea3;--accent-dim:#00a572;--on-accent:#003824;--error:#ffb4ab;--error-dim:#93000a;--on-surface:#e0e3e5;--on-surface-v:#c6c6cd;--outline:#909097;--outline-v:#45464d;--nav-bg:rgba(13,17,18,0.96)}
+[data-theme="light"]{--bg:#f7f9fb;--surface:#ffffff;--surface-high:#e6e8ea;--surface-highest:#e0e3e5;--primary:#0c1427;--accent:#006c49;--accent-dim:#6cf8bb;--on-accent:#fff;--error:#ba1a1a;--error-dim:#ffdad6;--on-surface:#191c1e;--on-surface-v:#45474c;--outline:#75777d;--outline-v:#c5c6cd;--nav-bg:rgba(247,249,251,0.96)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--on-surface);max-width:430px;margin:0 auto;position:relative;transition:background .3s,color .3s}
+h1,h2,h3,.mf{font-family:'Manrope',sans-serif}
+.mi{font-family:'Material Symbols Outlined','Material Icons Outlined';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-size:24px;line-height:1;vertical-align:middle;display:inline-block}
+.mi.fill{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24}
+
+/* ─── App container ─── */
+#app{position:fixed;inset:0;max-width:430px;margin:0 auto;display:flex;flex-direction:column;overflow:hidden}
+#screen{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#screen::-webkit-scrollbar{display:none}
+
+/* ─── Bottom Nav ─── */
+#nav{height:72px;background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--outline-v);display:none;align-items:center;justify-content:space-around;padding:0 4px;flex-shrink:0;z-index:100}
+.ni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 16px;border-radius:16px;cursor:pointer;transition:all .2s;color:var(--outline);background:none;border:none;font-family:'Inter',sans-serif;flex:1}
+.ni .lbl{font-size:10px;font-weight:600;letter-spacing:.3px}
+.ni.active{color:var(--accent)}
+.ni.active .mi{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24}
+.fab{width:56px;height:56px;border-radius:18px;background:var(--accent);color:var(--on-accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(78,222,163,.35);transition:all .2s;flex-shrink:0}
+.fab:active{transform:scale(.9)}
+
+/* ─── Cards & surfaces ─── */
+.card{background:var(--surface);border-radius:20px;overflow:hidden}
+.surface-high{background:var(--surface-high)}
+
+/* ─── Buttons ─── */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 24px;border-radius:16px;font-family:'Manrope',sans-serif;font-weight:700;font-size:15px;border:none;cursor:pointer;transition:all .2s;width:100%}
+.btn:active{transform:scale(.97);opacity:.9}
+.btn-accent{background:var(--accent);color:var(--on-accent);box-shadow:0 4px 16px rgba(78,222,163,.2)}
+.btn-surface{background:var(--surface-high);color:var(--on-surface)}
+.btn-ghost{background:transparent;border:1.5px solid var(--outline-v);color:var(--on-surface-v);font-size:14px;padding:12px 16px}
+.btn-danger{background:rgba(255,180,171,.1);border:1.5px solid rgba(255,180,171,.25);color:var(--error)}
+.btn-sm{padding:10px 16px;font-size:13px;border-radius:12px}
+
+/* ─── Inputs ─── */
+.inp{width:100%;background:var(--surface);border:1.5px solid var(--outline-v);border-radius:14px;padding:14px 16px;color:var(--on-surface);font-family:'Inter',sans-serif;font-size:15px;transition:border-color .2s;outline:none}
+.inp:focus{border-color:var(--accent)}
+.inp option{background:var(--surface);color:var(--on-surface)}
+select.inp{appearance:none;padding-right:36px}
+label.lbl{display:block;font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+
+/* ─── TopBar ─── */
+.topbar{padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--outline-v)}
+.tb-title{font-family:'Manrope',sans-serif;font-size:18px;font-weight:800;color:var(--on-surface)}
+.tb-btn{width:40px;height:40px;border-radius:50%;background:var(--surface);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--on-surface-v);transition:background .2s}
+.tb-btn:active{background:var(--surface-high)}
+
+/* ─── Chips / Filters ─── */
+.chip{padding:8px 16px;border-radius:99px;background:var(--surface);border:1.5px solid var(--outline-v);color:var(--on-surface-v);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:'Inter',sans-serif}
+.chip.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.scroll-x{display:flex;gap:8px;overflow-x:auto;padding:0 20px 4px;scrollbar-width:none}
+.scroll-x::-webkit-scrollbar{display:none}
+
+/* ─── Category chips ─── */
+.cat-chip{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 10px;border-radius:16px;background:var(--surface-high);border:2px solid transparent;cursor:pointer;transition:all .2s;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--on-surface-v);min-width:68px}
+.cat-chip.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.cat-chip .ci{font-size:24px}
+
+/* ─── Member chips ─── */
+.mem-chip{flex:1;padding:10px;border-radius:12px;background:var(--surface-high);border:2px solid transparent;cursor:pointer;transition:all .2s;font-size:13px;font-weight:600;color:var(--on-surface-v);text-align:center;font-family:'Inter',sans-serif;white-space:nowrap}
+.mem-chip.on{border-color:var(--accent);color:var(--accent)}
+
+/* ─── Expense item ─── */
+.ei{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;transition:background .15s;border-bottom:1px solid var(--outline-v)}
+.ei:last-child{border-bottom:none}
+.ei:active{background:var(--surface-high)}
+.ei-icon{width:48px;height:48px;border-radius:14px;background:var(--surface-high);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+
+/* ─── Progress bar ─── */
+.pb{height:6px;background:var(--surface-high);border-radius:99px;overflow:hidden}
+.pb-fill{height:100%;border-radius:99px;background:var(--accent);transition:width .3s}
+
+/* ─── Toggle ─── */
+.tog{position:relative;width:48px;height:28px;cursor:pointer;flex-shrink:0}
+.tog input{display:none}
+.tog-track{position:absolute;inset:0;border-radius:99px;background:var(--outline-v);transition:background .2s}
+.tog input:checked+.tog-track{background:var(--accent)}
+.tog-thumb{position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.3);pointer-events:none}
+.tog input:checked~.tog-thumb{transform:translateX(20px)}
+
+/* ─── Settings row ─── */
+.sr{display:flex;align-items:center;gap:14px;padding:16px 20px;cursor:pointer;transition:background .15s;border-bottom:1px solid var(--outline-v)}
+.sr:last-child{border-bottom:none}
+.sr:active{background:var(--surface-high)}
+.sr-icon{width:40px;height:40px;border-radius:12px;background:var(--surface-high);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--on-surface-v)}
+
+/* ─── Pct input ─── */
+.pct-inp{width:72px;background:var(--surface-high);border:1.5px solid var(--outline-v);border-radius:10px;padding:8px 10px;text-align:center;font-family:'Manrope',sans-serif;font-weight:700;font-size:15px;color:var(--on-surface);outline:none;transition:border .2s}
+.pct-inp:focus{border-color:var(--accent)}
+.pct-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--outline-v)}
+.pct-row:last-child{border-bottom:none}
+
+/* ─── Stat card ─── */
+.stat{background:var(--surface);border-radius:18px;padding:18px;transition:background .3s}
+
+/* ─── Bar chart ─── */
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar-track{width:100%;background:var(--surface-high);border-radius:6px 6px 0 0;display:flex;align-items:flex-end;overflow:hidden}
+.bar-fill{width:100%;background:var(--accent);border-radius:4px 4px 0 0;opacity:.6}
+.bar-fill.cur{opacity:1}
+
+/* ─── Credit card ─── */
+.cc{background:var(--surface);border-radius:20px;overflow:hidden;margin:0 20px 12px}
+
+/* ─── Avatar ─── */
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+
+/* ─── Toast ─── */
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--surface-highest);color:var(--on-surface);padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ─── Modal ─── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;backdrop-filter:blur(4px)}
+.modal-bg.open{display:flex;align-items:flex-end;justify-content:center}
+.modal-sheet{width:100%;max-width:430px;background:var(--surface);border-radius:24px 24px 0 0;padding:24px 24px 48px;max-height:85vh;overflow-y:auto}
+
+/* ─── Anim ─── */
+@keyframes fadeUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.fade-up{animation:fadeUp .2s ease-out}
+
+/* ─── Empty state ─── */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:48px 20px;text-align:center;color:var(--on-surface-v);font-size:14px;line-height:1.6}
+.empty .em{font-size:44px}
+
+/* ─── Section title ─── */
+.st{font-family:'Manrope',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--outline);padding:0 20px;margin-bottom:8px;display:block}
+
+/* ─── Amount big ─── */
+.amount-big{font-family:'Manrope',sans-serif;font-size:54px;font-weight:800;background:none;border:none;color:var(--on-surface);width:200px;text-align:center;outline:none;letter-spacing:-2px}
+.amount-big::placeholder{color:var(--outline-v)}
+
+/* ─── Date divider ─── */
+.dt-div{padding:10px 16px 2px;font-size:11px;font-weight:700;color:var(--outline);text-transform:uppercase;letter-spacing:.5px}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<div id="app">
+  <div id="screen"></div>
+  <nav id="nav">
+    <button class="ni active" id="ni-home" onclick="goTab('home')">
+      <span class="mi fill">home</span><span class="lbl">Inicio</span>
+    </button>
+    <button class="ni" id="ni-gastos" onclick="goTab('gastos')">
+      <span class="mi">receipt_long</span><span class="lbl">Gastos</span>
+    </button>
+    <button class="fab" onclick="push('agregar')">
+      <span class="mi fill" style="font-size:30px;">add</span>
+    </button>
+    <button class="ni" id="ni-creditos" onclick="goTab('creditos')">
+      <span class="mi">credit_score</span><span class="lbl">Créditos</span>
+    </button>
+    <button class="ni" id="ni-perfil" onclick="goTab('perfil')">
+      <span class="mi">person</span><span class="lbl">Perfil</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+<div class="modal-bg" id="m-credito" onclick="if(event.target===this)closeModal('m-credito')">
+  <div class="modal-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h3 class="mf" style="font-size:18px;font-weight:800">Nuevo Crédito</h3>
+      <button class="tb-btn" onclick="closeModal('m-credito')"><span class="mi">close</span></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div><label class="lbl">Prestó</label><div style="position:relative"><select class="inp" id="c-de" style="padding-left:44px"></select><span class="mi" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--outline);font-size:18px">person</span></div></div>
+      <div><label class="lbl">A</label><div style="position:relative"><select class="inp" id="c-a" style="padding-left:44px"></select><span class="mi" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--outline);font-size:18px">person</span></div></div>
+      <div><label class="lbl">Monto Total</label><input class="inp" id="c-monto" type="number" placeholder="0"></div>
+      <div><label class="lbl">Descripción</label><input class="inp" id="c-desc" type="text" placeholder="¿Para qué?"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label class="lbl">Cuotas</label><input class="inp" id="c-cuotas" type="number" min="1" placeholder="Ej: 6"></div>
+        <div><label class="lbl">Fecha inicio</label><input class="inp" id="c-fecha" type="date"></div>
+      </div>
+      <button class="btn btn-accent" onclick="saveCredito()"><span class="mi fill">credit_score</span>Registrar Crédito</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-pago" onclick="if(event.target===this)closeModal('m-pago')">
+  <div class="modal-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h3 class="mf" style="font-size:18px;font-weight:800">Registrar Pago</h3>
+      <button class="tb-btn" onclick="closeModal('m-pago')"><span class="mi">close</span></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div><label class="lbl">De</label><select class="inp" id="p-de" style="padding-left:12px"></select></div>
+      <div><label class="lbl">Para</label><select class="inp" id="p-a" style="padding-left:12px"></select></div>
+      <div><label class="lbl">Monto</label><input class="inp" id="p-monto" type="number" placeholder="0"></div>
+      <div><label class="lbl">Nota (opcional)</label><input class="inp" id="p-nota" type="text" placeholder="Descripción..."></div>
+      <button class="btn btn-accent" onclick="savePago()"><span class="mi fill">payments</span>Registrar Pago</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+<script>
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(console.error);
+}
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+const defaultS = {
+  theme:'dark',
+  tab:'home',
+  stack:[],
+  currentUser:0,
+  house:{name:'La Buena Onda',currency:'CLP'},
+  members:[
+    {id:0,name:'Anita',em:'👱‍♀️',color:'#4edea3'},
+    {id:1,name:'Carlos',em:'👨',color:'#bec6e0'},
+    {id:2,name:'Mafe',em:'👱‍♀️',color:'#ffb2b7'},
+  ],
+  filters:{mes:null,cat:'todas',person:'todos'},
+  selCat:'super',
+  selPagador:0,
+  splitPcts:{},
+  detalleId:null,
+  gastos:[],
+  creditos:[],
+  pagos:[],
+  nGasto:1,nCredito:1,nPago:1,
+};
+let houseId = localStorage.getItem('ekekos_house_id') || null;
+const S_LS = localStorage.getItem('ekekos_prod_state');
+let S = defaultS;
+
+// ══════════════════════════════════════════
+//  FIREBASE SYNC
+// ══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAVSuiQF892zrU1VfK0AGJY3MVfJPVVsuA",
+  authDomain: "ekekos-home.firebaseapp.com",
+  projectId: "ekekos-home",
+  storageBucket: "ekekos-home.firebasestorage.app",
+  messagingSenderId: "395440073921",
+  appId: "1:395440073921:web:dd383d7a92cbefb6737840"
+};
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
+
+let unsubSnapshot = null;
+let docRef = null;
+
+function subscribeToHouse(code) {
+  if(unsubSnapshot) unsubSnapshot();
+  docRef = db.collection('houses').doc(code);
+  let isInitialLoad = true;
+  unsubSnapshot = docRef.onSnapshot((docSnap) => {
+    if (docSnap.exists) {
+      S = docSnap.data();
+      localStorage.setItem('ekekos_prod_state', JSON.stringify(S));
+      if (!isInitialLoad && typeof render === 'function' && document.getElementById('screen')) {
+        render(S.tab);
+      }
+    } else {
+      docRef.set(S);
+    }
+    isInitialLoad = false;
+  });
+}
+
+function saveState(){
+  if(!houseId) return;
+  localStorage.setItem('ekekos_prod_state', JSON.stringify(S));
+  docRef.set(S); // Sincroniza con la nube
+}
+
+const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const CATS=[
+  {id:'super',label:'Súper',em:'🛒'},
+  {id:'cuentas',label:'Cuentas',em:'⚡'},
+  {id:'bolidos',label:'Bólidos',em:'🚗'},
+  {id:'restaurante',label:'Restaurante',em:'🍽️'},
+  {id:'salud',label:'Salud',em:'💊'},
+  {id:'carrete',label:'Carrete',em:'🎬'}
+];
+
+// ══════════════════════════════════════════
+//  ROUTER
+// ══════════════════════════════════════════
+const TABS=['home','gastos','creditos','perfil'];
+const TAB_VIEWS={'home':'home','gastos':'gastos','creditos':'creditos','perfil':'perfil'};
+
+function goTab(tab){
+  S.tab=tab; S.stack=[];
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  const ni=document.getElementById('ni-'+tab);
+  if(ni)ni.classList.add('active');
+  render(tab);
+}
+
+function push(view,data={}){
+  S.stack.push({view:S.stack.length?S.stack[S.stack.length-1].view:S.tab,data});
+  render(view,data);
+}
+
+function pop(){
+  if(S.stack.length){S.stack.pop();}
+  const prev=S.stack.length ? S.stack[S.stack.length-1].view : S.tab;
+  render(prev);
+}
+
+function render(view,data={}){
+  const navViews=['home','gastos','creditos','perfil','reportes'];
+  document.getElementById('nav').style.display=navViews.includes(view)?'flex':'none';
+  const sc=document.getElementById('screen');
+  sc.innerHTML='';
+  sc.scrollTop=0;
+  const el=document.createElement('div');
+  el.className='fade-up';
+  el.style.minHeight='100%';
+  const fn=VIEWS[view];
+  if(fn)el.innerHTML=fn(data);
+  sc.appendChild(el);
+  if(view==='agregar')initAgregar();
+  if(view==='reportes')renderCharts();
+  if(view==='config')initConfig();
+}
+
+// ══════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════
+function fmt(n){return'$'+Math.round(n).toLocaleString('es-CL')}
+function fmtD(d){const dt=new Date(d+'T12:00:00');return dt.toLocaleDateString('es-CL',{day:'numeric',month:'short'})}
+function getMiParte(g){const s=g.split.find(x=>x.id===S.currentUser);return s?g.monto*s.pct/100:0}
+function filtered(){
+  return S.gastos.filter(g=>{
+    const d=new Date(g.fecha+'T12:00:00');
+    const mOk=!S.filters.mes||MESES[d.getMonth()]===S.filters.mes;
+    const cOk=S.filters.cat==='todas'||g.cat===S.filters.cat;
+    const pOk=S.filters.person==='todos'||g.pagador===+S.filters.person||g.split.some(s=>s.id===+S.filters.person);
+    return mOk&&cOk&&pOk;
+  }).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+}
+function curMonth(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')}
+function greeting(){const h=new Date().getHours();return h<12?'Buenos días':h<18?'Buenas tardes':'Buenas noches'}
+function calcBalances(){
+  const bal={};
+  S.members.forEach(m=>S.members.forEach(n=>{if(m.id!==n.id){if(!bal[m.id])bal[m.id]={};bal[m.id][n.id]=0}}));
+  S.gastos.forEach(g=>{
+    g.split.forEach(s=>{
+      if(s.id!==g.pagador){
+        if(!bal[s.id])bal[s.id]={};
+        bal[s.id][g.pagador]=(bal[s.id][g.pagador]||0)+g.monto*s.pct/100;
+      }
+    });
+  });
+  S.pagos.forEach(p=>{
+    if(!bal[p.de])bal[p.de]={};
+    bal[p.de][p.a]=Math.max(0,(bal[p.de][p.a]||0)-p.monto);
+  });
+  return bal;
+}
+function eiHTML(g){
+  const p=S.members[g.pagador]||{em:'?',name:'?'};
+  const mp=getMiParte(g);
+  return`<div class="ei" onclick="push('detalle',{id:${g.id}})">
+    <div class="ei-icon">${g.em}</div>
+    <div style="flex:1;min-width:0">
+      <p style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.desc}</p>
+      <p style="font-size:12px;color:var(--on-surface-v);margin-top:2px">Pagó ${p.em} ${p.name}</p>
+    </div>
+    <div style="text-align:right;flex-shrink:0">
+      <p class="mf" style="font-size:15px;font-weight:800">${fmt(g.monto)}</p>
+      <p style="font-size:11px;color:var(--outline)">tu parte: ${fmt(mp)}</p>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  VIEWS
+// ══════════════════════════════════════════
+const VIEWS={
+
+// ─── INGRESO ───
+ingreso:()=>`
+<div style="min-height:100dvh;display:flex;flex-direction:column;padding:0 24px;background:var(--bg)">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px">
+    <div style="text-align:center">
+      <div style="width:80px;height:80px;border-radius:24px;background:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 8px 28px rgba(78,222,163,.35)">
+        <span class="mi fill" style="font-size:40px;color:var(--on-accent)">home</span>
+      </div>
+      <h1 class="mf" style="font-size:32px;font-weight:800;letter-spacing:-1px">Ekekos Home</h1>
+      <p style="color:var(--outline);font-size:15px;margin-top:8px">Finanzas transparentes para tu hogar</p>
+    </div>
+    
+    <div style="width:100%;margin-top:20px;padding:24px;background:var(--surface);border-radius:24px;text-align:center">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:16px">¿Nuevo(a) aquí?</h2>
+      <button class="btn btn-accent" onclick="crearHogar()" style="margin-bottom:12px">Crear nuevo hogar</button>
+    </div>
+
+    <div style="width:100%;padding:24px;background:var(--surface);border-radius:24px">
+      <h2 style="font-size:15px;font-weight:700;margin-bottom:12px;text-align:center;color:var(--on-surface-v)">Ya tengo un código</h2>
+      <div style="display:flex;gap:8px">
+        <input class="inp" id="in-codigo" type="text" placeholder="Ej: HK-9M2X" style="text-transform:uppercase" autocomplete="off">
+        <button class="btn btn-surface" onclick="unirseHogar(event)" style="width:auto;padding:0 20px"><span class="mi">arrow_forward</span></button>
+      </div>
+    </div>
+  </div>
+</div>`,
+
+// ─── CONFIG ───
+config:()=>`
+<div style="min-height:100dvh;display:flex;flex-direction:column;padding:0 24px;background:var(--bg)">
+  <div style="padding:20px 0 0;display:flex;align-items:center;gap:12px">
+    <button class="tb-btn" onclick="pop()"><span class="mi">arrow_back</span></button>
+    <span class="mf" style="font-size:17px;font-weight:700">Configura tu Casa</span>
+  </div>
+  <div style="flex:1;padding:28px 0;display:flex;flex-direction:column;gap:22px">
+    <div>
+      <label class="lbl">Nombre de la Casa</label>
+      <div style="position:relative">
+        <span class="mi" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--outline);font-size:20px">home</span>
+        <input class="inp" id="cfg-name" type="text" placeholder="Ej: La Buena Onda" style="padding-left:44px" value="${S.house.name}">
+      </div>
+    </div>
+    <div>
+      <label class="lbl">Moneda Principal</label>
+      <div style="position:relative">
+        <span class="mi" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--outline);font-size:20px;z-index:1">payments</span>
+        <select class="inp" id="cfg-cur" style="padding-left:44px">
+          <option value="CLP" ${S.house.currency==='CLP'?'selected':''}>CLP – Peso Chileno ($)</option>
+          <option value="USD" ${S.house.currency==='USD'?'selected':''}>USD – Dólar (US$)</option>
+          <option value="EUR" ${S.house.currency==='EUR'?'selected':''}>EUR – Euro (€)</option>
+          <option value="UF" ${S.house.currency==='UF'?'selected':''}>UF – Unidad de Fomento</option>
+        </select>
+        <span class="mi" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--outline);pointer-events:none;font-size:18px">expand_more</span>
+      </div>
+    </div>
+    <div>
+      <label class="lbl">Integrantes del Hogar</label>
+      <div id="cfg-members" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button onclick="addMember()" style="display:flex;align-items:center;gap:8px;margin-top:10px;background:none;border:1.5px dashed var(--outline-v);border-radius:14px;padding:12px 16px;color:var(--on-surface-v);cursor:pointer;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;width:100%;transition:all .2s">
+        <span class="mi" style="font-size:18px">person_add</span>Agregar integrante
+      </button>
+    </div>
+  </div>
+  <div style="padding:0 0 48px">
+    <button class="btn btn-accent" onclick="saveConfig()"><span class="mi fill">check</span>¡Listo, empezamos!</button>
+  </div>
+</div>`,
+
+// ─── HOME ───
+home:()=>{
+  const me=S.members[S.currentUser]||{em:'👤',name:'Usuario'};
+  const now=new Date();
+  const gastosM=S.gastos.filter(g=>{const d=new Date(g.fecha+'T12:00:00');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
+  const total=gastosM.reduce((s,g)=>s+g.monto,0);
+  const bal=calcBalances();
+  let debo=0,medeben=0;
+  S.members.forEach(m=>{
+    if(m.id===S.currentUser)return;
+    const iowe=(bal[S.currentUser]?.[m.id]||0);
+    const oweme=(bal[m.id]?.[S.currentUser]||0);
+    const net=oweme-iowe;
+    if(net>0)medeben+=net; else debo+=(-net);
+  });
+  const recent=[...S.gastos].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).slice(0,3);
+  const monthLbl=now.toLocaleDateString('es-CL',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
+  return`
+<div style="padding-bottom:24px">
+  <div style="padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <p style="font-size:13px;color:var(--on-surface-v);font-weight:500">${greeting()}</p>
+      <h1 style="font-size:22px;font-weight:800">${me.name} 👋</h1>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="tb-btn" onclick="push('reportes')"><span class="mi">bar_chart</span></button>
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px">${me.em}</div>
+    </div>
+  </div>
+  <!-- Balance card -->
+  <div style="margin:16px 20px 0;background:linear-gradient(135deg,#1a2a3a,#0f1e2e);border-radius:24px;padding:24px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:rgba(78,222,163,.08);border-radius:50%;pointer-events:none"></div>
+    <p style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px">${monthLbl}</p>
+    <p class="mf" style="font-size:38px;font-weight:800;color:#fff;letter-spacing:-1px;margin:6px 0">${fmt(total)}</p>
+    <p style="font-size:13px;color:rgba(255,255,255,.5)">Gasto total del hogar</p>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-accent btn-sm" onclick="push('agregar')" style="flex:1;padding:11px 10px;font-size:13px"><span class="mi fill" style="font-size:16px">add</span>Anotar</button>
+      <button onclick="openPagoModal()" style="flex:1;padding:11px 10px;border-radius:12px;background:rgba(255,255,255,.1);border:none;cursor:pointer;color:#fff;font-family:'Manrope',sans-serif;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s">
+        <span class="mi fill" style="font-size:16px">payments</span>Saldar
+      </button>
+    </div>
+  </div>
+  <!-- Debes / Te deben -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 20px 0">
+    <div class="stat" style="border-left:3px solid var(--error)">
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--outline)">Debes</p>
+      <p class="mf" style="font-size:22px;font-weight:800;color:var(--error);margin-top:4px">${fmt(debo)}</p>
+    </div>
+    <div class="stat" style="border-left:3px solid var(--accent)">
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--outline)">Te deben</p>
+      <p class="mf" style="font-size:22px;font-weight:800;color:var(--accent);margin-top:4px">${fmt(medeben)}</p>
+    </div>
+  </div>
+  <!-- Members neteo -->
+  <div style="margin:20px 0 0">
+    <span class="st">Neteo entre integrantes</span>
+    <div style="padding:0 20px;display:flex;flex-direction:column;gap:8px">
+      ${S.members.filter(m=>m.id!==S.currentUser).map(m=>{
+        const iowe=(bal[S.currentUser]?.[m.id]||0);
+        const oweme=(bal[m.id]?.[S.currentUser]||0);
+        const net=oweme-iowe;
+        const pos=net>=0;
+        return`<div style="display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:14px;padding:14px">
+          <div style="width:40px;height:40px;border-radius:50%;background:${m.color}20;display:flex;align-items:center;justify-content:center;font-size:20px">${m.em}</div>
+          <span style="font-weight:600;font-size:14px;flex:1">${m.name}</span>
+          <div style="text-align:right">
+            <p class="mf" style="font-size:16px;font-weight:800;color:${pos?'var(--accent)':'var(--error)'}">${pos?'+':''}${fmt(net)}</p>
+            <p style="font-size:11px;color:var(--outline)">${pos?'te debe':'le debes'}</p>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+  <!-- Recent -->
+  <div style="margin:20px 0 0">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px;margin-bottom:8px">
+      <span class="st" style="padding:0;margin:0">Últimos gastos</span>
+      <button onclick="goTab('gastos')" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Ver todo</button>
+    </div>
+    <div class="card" style="margin:0 20px;border-radius:20px">
+      ${recent.length?recent.map(g=>eiHTML(g)).join(''):'<div class="empty"><div class="em">🏠</div><p>Sin gastos aún. ¡Agrega el primero!</p></div>'}
+    </div>
+  </div>
+</div>`;
+},
+
+// ─── GASTOS ───
+gastos:()=>{
+  const now=new Date();
+  const months=[...new Set(S.gastos.map(g=>MESES[new Date(g.fecha+'T12:00:00').getMonth()]))];
+  if(!S.filters.mes||!months.includes(S.filters.mes))S.filters.mes=months[0]||null;
+  const f=filtered();
+  const total=f.reduce((s,g)=>s+g.monto,0);
+  const miParte=f.reduce((s,g)=>s+getMiParte(g),0);
+  // Group by date
+  let listHTML='';
+  if(f.length===0){listHTML='<div class="empty"><div class="em">🔍</div><p>Sin gastos con este filtro.</p></div>'}
+  else{
+    let lastDate='';
+    f.forEach(g=>{
+      if(g.fecha!==lastDate){listHTML+=`<div class="dt-div">${fmtD(g.fecha)}</div>`;lastDate=g.fecha;}
+      listHTML+=eiHTML(g);
+    });
+  }
+  return`
+<div style="padding-bottom:24px">
+  <div class="topbar">
+    <span class="tb-title">Gastos</span>
+    <button class="tb-btn" onclick="push('agregar')"><span class="mi">add</span></button>
+  </div>
+  <!-- Month filter -->
+  <div style="padding:12px 0 0">
+    <span class="st">Mes</span>
+    <div class="scroll-x" id="f-mes">
+      ${months.map(m=>`<button class="chip ${S.filters.mes===m?'on':''}" onclick="setF('mes','${m}',this)">${m}</button>`).join('')}
+    </div>
+  </div>
+  <!-- Cat filter -->
+  <div style="padding:12px 0 0">
+    <span class="st">Categoría</span>
+    <div class="scroll-x" id="f-cat">
+      <button class="chip ${S.filters.cat==='todas'?'on':''}" onclick="setF('cat','todas',this)">Todas</button>
+      ${CATS.map(c=>`<button class="chip ${S.filters.cat===c.id?'on':''}" onclick="setF('cat','${c.id}',this)">${c.em} ${c.label}</button>`).join('')}
+    </div>
+  </div>
+  <!-- Person filter -->
+  <div style="padding:12px 0 12px">
+    <span class="st">Persona</span>
+    <div class="scroll-x" id="f-per">
+      <button class="chip ${S.filters.person==='todos'?'on':''}" onclick="setF('person','todos',this)">Todos</button>
+      ${S.members.map(m=>`<button class="chip ${S.filters.person==m.id?'on':''}" onclick="setF('person','${m.id}',this)">${m.em} ${m.name}</button>`).join('')}
+    </div>
+  </div>
+  <!-- Total bar -->
+  <div style="margin:0 20px 12px;background:var(--surface);border-radius:16px;padding:16px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Total</p>
+      <p class="mf" style="font-size:24px;font-weight:800">${fmt(total)}</p>
+    </div>
+    <div style="text-align:right">
+      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Tu parte</p>
+      <p class="mf" style="font-size:22px;font-weight:800;color:var(--accent)">${fmt(miParte)}</p>
+    </div>
+  </div>
+  <!-- List -->
+  <div class="card" style="margin:0 20px;border-radius:20px">${listHTML}</div>
+</div>`;
+},
+
+// ─── AGREGAR GASTO ───
+agregar:()=>{
+  const sym={CLP:'$',USD:'US$',EUR:'€',UF:'UF'}[S.house.currency]||'$';
+  return`
+<div style="min-height:100dvh;background:var(--bg);display:flex;flex-direction:column">
+  <div class="topbar">
+    <button class="tb-btn" onclick="pop()"><span class="mi">arrow_back</span></button>
+    <span class="tb-title">Agregar Gasto</span>
+    <div style="width:40px"></div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:0 20px 130px">
+    <!-- Amount -->
+    <div style="text-align:center;padding:28px 0 20px">
+      <p style="font-size:11px;font-weight:700;color:var(--outline);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Monto Total</p>
+      <div style="display:flex;align-items:center;justify-content:center;gap:4px">
+        <span class="mf" style="font-size:36px;font-weight:800;color:var(--outline)">${sym}</span>
+        <input type="number" class="amount-big" id="a-monto" placeholder="0" oninput="updatePreview()">
+      </div>
+    </div>
+    <!-- Category -->
+    <p style="font-size:13px;font-weight:700;color:var(--on-surface-v);margin-bottom:10px">Categoría</p>
+    <div id="a-cats" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+      ${CATS.map(c=>`<div class="cat-chip ${c.id===S.selCat?'on':''}" onclick="selCat('${c.id}',this)" style="flex:1;min-width:70px"><span class="ci">${c.em}</span>${c.label}</div>`).join('')}
+    </div>
+    <!-- Description -->
+    <div style="margin-bottom:16px">
+      <p style="font-size:13px;font-weight:700;color:var(--on-surface-v);margin-bottom:8px">Descripción</p>
+      <input class="inp" id="a-desc" type="text" placeholder="¿En qué se gastó?">
+    </div>
+    <!-- Date -->
+    <div style="margin-bottom:16px">
+      <p style="font-size:13px;font-weight:700;color:var(--on-surface-v);margin-bottom:8px">Fecha</p>
+      <input class="inp" id="a-fecha" type="date">
+    </div>
+    <!-- Who paid -->
+    <div style="margin-bottom:16px">
+      <p style="font-size:13px;font-weight:700;color:var(--on-surface-v);margin-bottom:8px">¿Quién pagó?</p>
+      <div id="a-pagador" style="display:flex;gap:8px;flex-wrap:wrap">
+        ${S.members.map(m=>`<div class="mem-chip ${m.id===S.selPagador?'on':''}" onclick="selPagador(${m.id},this)" style="min-width:80px">${m.em} ${m.name}</div>`).join('')}
+      </div>
+    </div>
+    <!-- Split percentages -->
+    <div style="background:var(--surface);border-radius:18px;padding:16px;margin-bottom:12px">
+      <p style="font-size:13px;font-weight:700;color:var(--on-surface-v);margin-bottom:4px">División del gasto</p>
+      <p style="font-size:11px;color:var(--outline);margin-bottom:14px">Asigna el % de cada integrante</p>
+      <div id="a-split"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--outline-v);margin-top:4px">
+        <span style="font-size:13px;font-weight:600;color:var(--outline)">Total</span>
+        <span id="pct-tot" class="mf" style="font-size:16px;font-weight:800;color:var(--accent)">100%</span>
+      </div>
+    </div>
+    <!-- Preview -->
+    <div style="background:var(--surface);border-radius:18px;padding:16px">
+      <p style="font-size:11px;font-weight:700;color:var(--outline);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Vista previa</p>
+      <div id="a-preview"></div>
+    </div>
+  </div>
+  <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:16px 20px 36px;background:linear-gradient(to top,var(--bg) 65%,transparent)">
+    <button class="btn btn-accent" onclick="saveGasto()"><span class="mi fill">save</span>Guardar Gasto</button>
+  </div>
+</div>`;
+},
+
+// ─── DETALLE ───
+detalle:(data)=>{
+  const g=S.gastos.find(x=>x.id===data.id);
+  if(!g)return'<div class="empty"><div class="em">❌</div><p>No encontrado</p></div>';
+  const p=S.members[g.pagador]||{em:'?',name:'?'};
+  const mp=getMiParte(g);
+  const cat=CATS.find(c=>c.id===g.cat)||{label:g.cat};
+  return`
+<div style="min-height:100dvh;background:var(--bg);display:flex;flex-direction:column">
+  <div class="topbar">
+    <button class="tb-btn" onclick="pop()"><span class="mi">arrow_back</span></button>
+    <span class="tb-title">Detalle</span>
+    <button class="tb-btn" onclick="delGasto(${g.id})"><span class="mi" style="color:var(--error)">delete</span></button>
+  </div>
+  <div style="flex:1;padding:20px;overflow-y:auto">
+    <div style="text-align:center;padding:24px 0 28px">
+      <div style="font-size:56px;margin-bottom:12px">${g.em}</div>
+      <h2 class="mf" style="font-size:24px;font-weight:800">${g.desc}</h2>
+      <p style="font-size:14px;color:var(--outline);margin-top:4px">${fmtD(g.fecha)}</p>
+      <p class="mf" style="font-size:40px;font-weight:800;margin-top:16px;letter-spacing:-1px">${fmt(g.monto)}</p>
+    </div>
+    <div style="background:var(--surface);border-radius:20px;padding:20px;margin-bottom:14px">
+      <p style="font-size:11px;font-weight:700;color:var(--outline);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Información</p>
+      ${[['Categoría',`${g.em} ${cat.label}`],['Pagó',`${p.em} ${p.name}`],['Tu parte',`<span style="color:var(--accent);font-weight:700">${fmt(mp)}</span>`],['Fecha',fmtD(g.fecha)]].map(([k,v])=>`
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--outline-v)">
+        <span style="font-size:14px;color:var(--on-surface-v)">${k}</span>
+        <span style="font-size:14px;font-weight:600">${v}</span>
+      </div>`).join('')}
+    </div>
+    <div style="background:var(--surface);border-radius:20px;padding:20px">
+      <p style="font-size:11px;font-weight:700;color:var(--outline);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">División</p>
+      ${g.split.map(s=>{
+        const m=S.members[s.id]||{em:'?',name:'?'};
+        return`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--outline-v)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">${m.em}</span>
+            <span style="font-size:14px;font-weight:600">${m.name}</span>
+          </div>
+          <div style="text-align:right">
+            <p class="mf" style="font-size:14px;font-weight:800">${fmt(g.monto*s.pct/100)}</p>
+            <p style="font-size:11px;color:var(--outline)">${s.pct}%</p>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+</div>`;
+},
+
+// ─── CRÉDITOS ───
+creditos:()=>{
+  let debo=0,medeben=0;
+  S.creditos.forEach(c=>{
+    const saldo=c.montoTotal*(c.cuotas-c.cuotasPagadas)/c.cuotas;
+    if(c.a===S.currentUser)debo+=saldo;
+    if(c.de===S.currentUser)medeben+=saldo;
+  });
+  const cuotaHTML=(c)=>{
+    const lender=S.members[c.de]||{em:'?',name:'?'};
+    const borrower=S.members[c.a]||{em:'?',name:'?'};
+    const cuotaMonto=c.montoTotal/c.cuotas;
+    const saldo=c.montoTotal*(c.cuotas-c.cuotasPagadas)/c.cuotas;
+    const pct=c.cuotasPagadas/c.cuotas*100;
+    const iAmB=c.a===S.currentUser;
+    const involved=c.de===S.currentUser||c.a===S.currentUser;
+    const done=c.cuotasPagadas>=c.cuotas;
+    return`<div class="cc">
+      <div style="padding:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:24px">${lender.em}</span>
+            <span class="mi" style="font-size:16px;color:var(--outline)">arrow_forward</span>
+            <span style="font-size:24px">${borrower.em}</span>
+            <div style="margin-left:8px">
+              <p style="font-size:13px;font-weight:600">${lender.name} → ${borrower.name}</p>
+            </div>
+          </div>
+          <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;background:${done?'rgba(78,222,163,.15)':iAmB?'rgba(255,180,171,.15)':'rgba(190,198,224,.15)'};color:${done?'var(--accent)':iAmB?'var(--error)':'var(--primary)'}">${done?'Saldado ✅':iAmB?'Lo debes':c.de===S.currentUser?'Te deben':'Entre otros'}</span>
+        </div>
+        <p style="font-weight:700;font-size:15px;margin-bottom:14px">${c.desc}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="background:var(--surface-high);border-radius:12px;padding:12px;text-align:center">
+            <p style="font-size:10px;color:var(--outline);font-weight:700;text-transform:uppercase;margin-bottom:4px">Monto total</p>
+            <p class="mf" style="font-size:15px;font-weight:800">${fmt(c.montoTotal)}</p>
+          </div>
+          <div style="background:var(--surface-high);border-radius:12px;padding:12px;text-align:center">
+            <p style="font-size:10px;color:var(--outline);font-weight:700;text-transform:uppercase;margin-bottom:4px">Cuota mensual</p>
+            <p class="mf" style="font-size:15px;font-weight:800">${fmt(cuotaMonto)}</p>
+          </div>
+          <div style="background:${done?'rgba(78,222,163,.1)':'rgba(255,180,171,.1)'};border-radius:12px;padding:12px;text-align:center">
+            <p style="font-size:10px;color:var(--outline);font-weight:700;text-transform:uppercase;margin-bottom:4px">Saldo</p>
+            <p class="mf" style="font-size:15px;font-weight:800;color:${done?'var(--accent)':'var(--error)'}">${fmt(saldo)}</p>
+          </div>
+        </div>
+        <div style="margin-bottom:${involved&&!done?'14px':'0'}">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:12px;color:var(--outline)">Progreso de pago</span>
+            <span style="font-size:12px;font-weight:700">${c.cuotasPagadas}/${c.cuotas} cuotas</span>
+          </div>
+          <div class="pb"><div class="pb-fill" style="width:${pct}%"></div></div>
+        </div>
+        ${involved&&!done?`<button onclick="pagarCuota(${c.id})" class="btn btn-accent btn-sm"><span class="mi fill" style="font-size:16px">payments</span>Pagar cuota ${c.cuotasPagadas+1} — ${fmt(cuotaMonto)}</button>`:''}
+      </div>
+    </div>`;
+  };
+  return`
+<div style="padding-bottom:24px">
+  <div class="topbar">
+    <span class="tb-title">Créditos</span>
+    <button class="tb-btn" onclick="openCreditoModal()"><span class="mi">add</span></button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 20px 0">
+    <div class="stat" style="border-left:3px solid var(--error)">
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--outline)">Debo</p>
+      <p class="mf" style="font-size:22px;font-weight:800;color:var(--error);margin-top:4px">${fmt(debo)}</p>
+    </div>
+    <div class="stat" style="border-left:3px solid var(--accent)">
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--outline)">Me deben</p>
+      <p class="mf" style="font-size:22px;font-weight:800;color:var(--accent);margin-top:4px">${fmt(medeben)}</p>
+    </div>
+  </div>
+  <div style="margin:16px 0 0">
+    ${S.creditos.length?S.creditos.map(c=>cuotaHTML(c)).join(''):'<div class="empty"><div class="em">🤝</div><p>Sin créditos registrados.<br>Usa el <strong>+</strong> para agregar uno.</p></div>'}
+  </div>
+</div>`;
+},
+
+// ─── REPORTES ───
+reportes:()=>{
+  const now=new Date();
+  const months6=Array.from({length:6},(_,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-5+i,1);return{m:MESES[d.getMonth()],idx:d.getMonth(),yr:d.getFullYear()}});
+  return`
+<div style="padding-bottom:24px">
+  <div class="topbar">
+    <button class="tb-btn" onclick="pop()"><span class="mi">arrow_back</span></button>
+    <span class="tb-title">Reportes</span>
+    <div style="width:40px"></div>
+  </div>
+  <!-- Bar chart -->
+  <div style="background:var(--surface);border-radius:20px;margin:16px 20px 0;padding:20px">
+    <h3 class="mf" style="font-size:15px;font-weight:800;margin-bottom:4px">Gastos por mes</h3>
+    <p style="font-size:12px;color:var(--outline);margin-bottom:20px">Últimos 6 meses</p>
+    <div id="r-bars" style="display:flex;align-items:flex-end;gap:8px;height:140px"></div>
+    <div style="display:flex;gap:8px;margin-top:8px" id="r-bar-labels"></div>
+  </div>
+  <!-- Category -->
+  <div style="background:var(--surface);border-radius:20px;margin:12px 20px 0;padding:20px">
+    <h3 class="mf" style="font-size:15px;font-weight:800;margin-bottom:16px">Por categoría</h3>
+    <div id="r-cats" style="display:flex;flex-direction:column;gap:12px"></div>
+  </div>
+  <!-- Members -->
+  <div style="background:var(--surface);border-radius:20px;margin:12px 20px 0;padding:20px">
+    <h3 class="mf" style="font-size:15px;font-weight:800;margin-bottom:16px">Aporte por persona</h3>
+    <div id="r-members" style="display:flex;flex-direction:column;gap:14px"></div>
+  </div>
+</div>
+<script>window._rm=${JSON.stringify(months6)}<\/script>`;
+},
+
+// ─── PERFIL ───
+perfil:()=>{
+  const me=S.members[S.currentUser]||{em:'👤',name:'Usuario'};
+  return`
+<div style="padding-bottom:24px">
+  <div class="topbar">
+    <span class="tb-title">Perfil</span>
+    <div style="width:40px"></div>
+  </div>
+  <!-- User -->
+  <div style="padding:24px 20px;text-align:center">
+    <div style="width:80px;height:80px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 12px">${me.em}</div>
+    <h2 class="mf" style="font-size:20px;font-weight:800">${me.name}</h2>
+    <p style="font-size:13px;color:var(--outline);margin-top:2px">Casa: ${S.house.name} · ${S.house.currency}</p>
+  </div>
+  <!-- Integrantes -->
+  <span class="st">Integrantes</span>
+  <div class="card" style="margin:0 20px;border-radius:20px">
+    ${S.members.map(m=>`<div class="sr" style="cursor:default">
+      <div style="width:40px;height:40px;border-radius:50%;background:${m.color}20;display:flex;align-items:center;justify-content:center;font-size:20px">${m.em}</div>
+      <div style="flex:1">
+        <p style="font-size:14px;font-weight:600">${m.name}${m.id===S.currentUser?' <span style="font-size:11px;background:rgba(78,222,163,.15);color:var(--accent);padding:2px 8px;border-radius:99px;font-weight:700">tú</span>':''}</p>
+        <p style="font-size:12px;color:var(--outline)">Integrante del hogar</p>
+      </div>
+    </div>`).join('')}
+  </div>
+  <!-- Settings -->
+  <span class="st" style="margin:20px 0 8px;display:block">Ajustes</span>
+  <div class="card" style="margin:0 20px;border-radius:20px">
+    <div class="sr">
+      <div class="sr-icon"><span class="mi">dark_mode</span></div>
+      <div style="flex:1">
+        <p style="font-size:14px;font-weight:600">Modo oscuro</p>
+        <p style="font-size:12px;color:var(--outline)">Tema de la aplicación</p>
+      </div>
+      <label class="tog" onclick="event.stopPropagation()">
+        <input type="checkbox" id="tog-dark" ${S.theme==='dark'?'checked':''} onchange="toggleTheme()">
+        <div class="tog-track"></div>
+        <div class="tog-thumb"></div>
+      </label>
+    </div>
+    <div class="sr" onclick="push('config')">
+      <div class="sr-icon"><span class="mi">home</span></div>
+      <div style="flex:1">
+        <p style="font-size:14px;font-weight:600">Configurar casa</p>
+        <p style="font-size:12px;color:var(--outline)">Nombre, moneda, integrantes</p>
+      </div>
+      <span class="mi" style="color:var(--outline);font-size:20px">chevron_right</span>
+    </div>
+    <div class="sr" onclick="push('reportes')">
+      <div class="sr-icon"><span class="mi">bar_chart</span></div>
+      <div style="flex:1">
+        <p style="font-size:14px;font-weight:600">Reportes</p>
+        <p style="font-size:12px;color:var(--outline)">Análisis de gastos del hogar</p>
+      </div>
+      <span class="mi" style="color:var(--outline);font-size:20px">chevron_right</span>
+    </div>
+    <div class="sr" onclick="showToast('🔔 Próximamente')">
+      <div class="sr-icon"><span class="mi">notifications</span></div>
+      <div style="flex:1">
+        <p style="font-size:14px;font-weight:600">Notificaciones</p>
+        <p style="font-size:12px;color:var(--outline)">Push y recordatorios</p>
+      </div>
+      <span class="mi" style="color:var(--outline);font-size:20px">chevron_right</span>
+    </div>
+  </div>
+  <!-- Logout -->
+  <div style="padding:20px">
+    <button class="btn btn-danger" onclick="showToast('¡Hasta pronto! 👋')"><span class="mi">logout</span>Salir de la cuenta</button>
+  </div>
+</div>`;
+},
+
+};// end VIEWS
+
+// ══════════════════════════════════════════
+//  AGREGAR GASTO LOGIC
+// ══════════════════════════════════════════
+function initAgregar(){
+  const today=new Date().toISOString().split('T')[0];
+  const f=document.getElementById('a-fecha');
+  if(f)f.value=today;
+  S.selCat='super'; S.selPagador=S.currentUser;
+  const n=S.members.length;
+  const eq=Math.floor(100/n);
+  S.splitPcts={};
+  S.members.forEach((m,i)=>S.splitPcts[m.id]=eq+(i===0?100-eq*n:0));
+  renderSplit();
+  updatePreview();
+}
+function selCat(id,el){
+  S.selCat=id;
+  document.querySelectorAll('#a-cats .cat-chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+}
+function selPagador(id,el){
+  S.selPagador=id;
+  document.querySelectorAll('#a-pagador .mem-chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+}
+function renderSplit(){
+  const el=document.getElementById('a-split');
+  if(!el)return;
+  el.innerHTML=S.members.map(m=>`
+    <div class="pct-row">
+      <div style="width:36px;height:36px;border-radius:50%;background:${m.color}20;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${m.em}</div>
+      <span style="flex:1;font-weight:600;font-size:14px">${m.name}</span>
+      <input class="pct-inp" type="number" min="0" max="100" value="${S.splitPcts[m.id]||0}" id="pct-${m.id}" oninput="onPctChange(${m.id},this.value)">
+      <span style="font-size:14px;color:var(--outline)">%</span>
+    </div>`).join('');
+  updatePctTotal();
+}
+function onPctChange(id,val){
+  S.splitPcts[id]=parseInt(val)||0;
+  updatePctTotal();
+  updatePreview();
+}
+function updatePctTotal(){
+  const tot=S.members.reduce((s,m)=>s+(parseInt(document.getElementById('pct-'+m.id)?.value)||0),0);
+  const el=document.getElementById('pct-tot');
+  if(el){el.textContent=tot+'%';el.style.color=tot===100?'var(--accent)':'var(--error)';}
+}
+function updatePreview(){
+  const monto=parseFloat(document.getElementById('a-monto')?.value)||0;
+  const el=document.getElementById('a-preview');
+  if(!el)return;
+  el.innerHTML=S.members.map(m=>{
+    const pct=parseInt(document.getElementById('pct-'+m.id)?.value)||0;
+    const amt=monto*pct/100;
+    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--outline-v)">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:16px">${m.em}</span>
+        <span style="font-size:14px;font-weight:600">${m.name}</span>
+        <span style="font-size:12px;color:var(--outline)">${pct}%</span>
+      </div>
+      <span class="mf" style="font-size:15px;font-weight:700">${fmt(amt)}</span>
+    </div>`;
+  }).join('');
+}
+function saveGasto(){
+  const monto=parseFloat(document.getElementById('a-monto')?.value);
+  let desc=(document.getElementById('a-desc')?.value||'').trim();
+  const fecha=document.getElementById('a-fecha')?.value;
+  if(!monto||monto<=0){showToast('Ingresa un monto');return;}
+  const cat=CATS.find(c=>c.id===S.selCat)||CATS[0];
+  if(!desc) desc=cat.label; // Make description optional
+  const tot=S.members.reduce((s,m)=>s+(parseInt(document.getElementById('pct-'+m.id)?.value)||0),0);
+  if(tot!==100){showToast('Los porcentajes deben sumar 100%');return;}
+  const split=S.members.map(m=>({id:m.id,pct:parseInt(document.getElementById('pct-'+m.id)?.value||0)})).filter(s=>s.pct>0);
+  
+  S.gastos.unshift({id:S.nGasto++,desc,cat:S.selCat,em:cat.em,monto,fecha,pagador:S.selPagador,split});
+  saveState();
+  showToast('¡Gasto guardado! ✅');
+  pop();
+}
+
+// ══════════════════════════════════════════
+//  DETALLE / DELETE
+// ══════════════════════════════════════════
+function delGasto(id){
+  if(!confirm('¿Eliminar este gasto?'))return;
+  S.gastos=S.gastos.filter(g=>g.id!==id);
+  saveState();
+  showToast('Gasto eliminado');
+  pop();
+}
+
+// ══════════════════════════════════════════
+//  FILTERS
+// ══════════════════════════════════════════
+function setF(type,val,btn){
+  S.filters[type]=val;
+  render('gastos');
+}
+
+// ══════════════════════════════════════════
+//  CRÉDITOS
+// ══════════════════════════════════════════
+function openCreditoModal(){
+  const opts=S.members.map(m=>`<option value="${m.id}">${m.em} ${m.name}</option>`).join('');
+  document.getElementById('c-de').innerHTML=opts;
+  document.getElementById('c-a').innerHTML=opts;
+  document.getElementById('c-a').value=(S.currentUser+1)%S.members.length;
+  ['c-monto','c-desc','c-cuotas'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('c-fecha').value=new Date().toISOString().split('T')[0];
+  openModal('m-credito');
+}
+function saveCredito(){
+  const de=parseInt(document.getElementById('c-de').value);
+  const a=parseInt(document.getElementById('c-a').value);
+  const monto=parseFloat(document.getElementById('c-monto').value);
+  const desc=(document.getElementById('c-desc').value||'').trim();
+  const cuotas=parseInt(document.getElementById('c-cuotas').value);
+  const fechaInicio=document.getElementById('c-fecha').value;
+  if(de===a){showToast('Selecciona personas distintas');return;}
+  if(!monto||monto<=0){showToast('Ingresa un monto válido');return;}
+  if(!desc){showToast('Agrega una descripción');return;}
+  if(!cuotas||cuotas<1){showToast('Ingresa número de cuotas');return;}
+  S.creditos.push({id:S.nCredito++,de,a,desc,montoTotal:monto,cuotas,cuotasPagadas:0,fechaInicio});
+  saveState();
+  closeModal('m-credito');
+  showToast('¡Crédito registrado! 🤝');
+  render('creditos');
+}
+function pagarCuota(id){
+  const c=S.creditos.find(x=>x.id===id);
+  if(!c||c.cuotasPagadas>=c.cuotas)return;
+  c.cuotasPagadas++;
+  saveState();
+  showToast(`✅ Cuota ${c.cuotasPagadas}/${c.cuotas} pagada`);
+  render('creditos');
+}
+
+// ══════════════════════════════════════════
+//  PAGOS
+// ══════════════════════════════════════════
+function openPagoModal(){
+  const opts=S.members.map(m=>`<option value="${m.id}">${m.em} ${m.name}</option>`).join('');
+  document.getElementById('p-de').innerHTML=opts;
+  document.getElementById('p-a').innerHTML=opts;
+  document.getElementById('p-de').value=S.currentUser;
+  document.getElementById('p-a').value=(S.currentUser+1)%S.members.length;
+  document.getElementById('p-monto').value='';
+  document.getElementById('p-nota').value='';
+  openModal('m-pago');
+}
+function savePago(){
+  const de=parseInt(document.getElementById('p-de').value);
+  const a=parseInt(document.getElementById('p-a').value);
+  const monto=parseFloat(document.getElementById('p-monto').value);
+  const nota=(document.getElementById('p-nota').value||'').trim()||'Pago registrado';
+  if(de===a){showToast('Selecciona personas distintas');return;}
+  if(!monto||monto<=0){showToast('Ingresa un monto válido');return;}
+  S.pagos.push({id:S.nPago++,de,a,monto,fecha:new Date().toISOString().split('T')[0],nota});
+  saveState();
+  closeModal('m-pago');
+  showToast('💸 Pago registrado');
+  render(S.tab);
+}
+
+// ══════════════════════════════════════════
+//  REPORTES CHARTS
+// ══════════════════════════════════════════
+function renderCharts(){
+  const now=new Date();
+  const months6=Array.from({length:6},(_,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-5+i,1);return{m:MESES[d.getMonth()],idx:d.getMonth(),yr:d.getFullYear()}});
+  // Bar chart
+  const barData=months6.map(({m,idx,yr})=>{
+    const tot=S.gastos.filter(g=>{const d=new Date(g.fecha+'T12:00:00');return d.getMonth()===idx&&d.getFullYear()===yr}).reduce((s,g)=>s+g.monto,0);
+    return{m,tot};
+  });
+  const maxV=Math.max(...barData.map(b=>b.tot),1);
+  const barsEl=document.getElementById('r-bars');
+  if(barsEl)barsEl.innerHTML=barData.map((b,i)=>`
+    <div class="bar" style="flex:1">
+      <div class="bar-track" style="height:120px;width:100%;border-radius:6px 6px 0 0">
+        <div class="bar-fill ${i===5?'cur':''}" style="height:${b.tot/maxV*100}%;width:100%;border-radius:6px 6px 0 0"></div>
+      </div>
+      <span style="font-size:10px;font-weight:700;color:${i===5?'var(--accent)':'var(--outline)'};text-transform:uppercase">${b.m}</span>
+      ${b.tot>0?`<span style="font-size:9px;color:var(--on-surface-v)">${fmt(b.tot).replace('$','')}</span>`:''}
+    </div>`).join('');
+  // Category breakdown
+  const catTot={};CATS.forEach(c=>catTot[c.id]=0);
+  S.gastos.forEach(g=>catTot[g.cat]=(catTot[g.cat]||0)+g.monto);
+  const totAll=Object.values(catTot).reduce((s,v)=>s+v,0)||1;
+  const catsEl=document.getElementById('r-cats');
+  if(catsEl)catsEl.innerHTML=CATS.filter(c=>catTot[c.id]>0).sort((a,b)=>catTot[b.id]-catTot[a.id]).map(c=>{
+    const pct=Math.round(catTot[c.id]/totAll*100);
+    return`<div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">${c.em}</span>
+          <span style="font-size:13px;font-weight:600">${c.label}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="mf" style="font-size:14px;font-weight:700">${fmt(catTot[c.id])}</span>
+          <span style="font-size:11px;color:var(--outline);min-width:28px;text-align:right">${pct}%</span>
+        </div>
+      </div>
+      <div class="pb"><div class="pb-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+  // Member breakdown
+  const memTot={};S.members.forEach(m=>memTot[m.id]=0);
+  S.gastos.forEach(g=>g.split.forEach(s=>memTot[s.id]=(memTot[s.id]||0)+g.monto*s.pct/100));
+  const totMem=Object.values(memTot).reduce((s,v)=>s+v,0)||1;
+  const memEl=document.getElementById('r-members');
+  if(memEl)memEl.innerHTML=S.members.map(m=>{
+    const pct=Math.round(memTot[m.id]/totMem*100);
+    return`<div style="display:flex;align-items:center;gap:12px">
+      <div style="font-size:28px">${m.em}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:14px;font-weight:600">${m.name}</span>
+          <span class="mf" style="font-size:14px;font-weight:700">${fmt(memTot[m.id])} <span style="font-size:11px;font-weight:400;color:var(--outline)">${pct}%</span></span>
+        </div>
+        <div class="pb"><div class="pb-fill" style="width:${pct}%;background:${m.color}"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  CONFIG LOGIC
+// ══════════════════════════════════════════
+function initConfig(){
+  renderConfigMembers();
+}
+function renderConfigMembers(){
+  const el=document.getElementById('cfg-members');
+  if(!el)return;
+  const EMOJIS=['👩','👨','👱‍♀️','👦','👧','🧑'];
+  el.innerHTML=S.members.map((m,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:14px;padding:12px 14px">
+      <select class="inp" onchange="S.members[${i}].em=this.value;saveState()" style="background:none;border:none;font-size:22px;padding:0;width:30px;-webkit-appearance:none;cursor:pointer">
+        ${EMOJIS.map(e=>`<option value="${e}" ${m.em===e?'selected':''}>${e}</option>`).join('')}
+      </select>
+      <input style="flex:1;background:none;border:none;color:var(--on-surface);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;outline:none" value="${m.name}" onchange="S.members[${i}].name=this.value" placeholder="Nombre">
+      ${S.members.length>1?`<button onclick="removeMember(${i})" style="background:none;border:none;cursor:pointer;color:var(--error)"><span class="mi" style="font-size:18px">remove_circle</span></button>`:''}
+    </div>`).join('');
+}
+function addMember(){
+  const EMOJIS=['👩','👨','👱‍♀️','👦','👧','🧑','👴','👵'];
+  const COLORS=['#4edea3','#bec6e0','#ffb2b7','#ffd180','#80deea','#cf93d9'];
+  const i=S.members.length;
+  S.members.push({id:i,name:'Integrante '+(i+1),em:EMOJIS[i%EMOJIS.length],color:COLORS[i%COLORS.length]});
+  saveState();
+  renderConfigMembers();
+}
+function removeMember(idx){
+  if(S.members.length <= 1) { showToast('Debe quedar mínimo 1 integrante'); return; }
+  S.members.splice(idx,1);
+  S.members.forEach((m,i)=>m.id=i);
+  if(S.currentUser>=S.members.length)S.currentUser=0;
+  saveState();
+  renderConfigMembers();
+}
+function saveConfig(){
+  const n=document.getElementById('cfg-name')?.value||'Mi Casa';
+  const c=document.getElementById('cfg-cur')?.value||'CLP';
+  S.house.name=n; S.house.currency=c;
+  document.querySelectorAll('#cfg-members input').forEach((inp,i)=>{if(S.members[i])S.members[i].name=inp.value||S.members[i].name;});
+  saveState();
+  showToast('¡Configuración guardada! 🏠');
+  pop();
+}
+
+// ══════════════════════════════════════════
+//  MULTI-TENANT AUTH
+// ══════════════════════════════════════════
+function crearHogar() {
+  const code = 'HK-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+  houseId = code;
+  localStorage.setItem('ekekos_house_id', houseId);
+  S = JSON.parse(JSON.stringify(defaultS));
+  S.members = [{id:0, name:'Tu Nombre', em:'👱‍♀️', color:'#4edea3'}];
+  subscribeToHouse(houseId);
+  S.tab = 'config';
+  saveState();
+  render('config');
+  showToast('¡Hogar '+code+' creado!');
+}
+
+async function unirseHogar(e) {
+  const code = (document.getElementById('in-codigo').value || '').trim().toUpperCase();
+  if(!code || code.length < 5) return showToast('Código inválido');
+  const btn = e.currentTarget;
+  const oldHTML = btn.innerHTML;
+  btn.innerHTML = '...'; btn.disabled = true;
+  try {
+    const check = await db.collection('houses').doc(code).get();
+    if (!check.exists) { showToast('Hogar no encontrado'); btn.innerHTML=oldHTML; btn.disabled=false; return; }
+    houseId = code;
+    localStorage.setItem('ekekos_house_id', houseId);
+    S = check.data();
+    subscribeToHouse(houseId);
+    render('home');
+    showToast('¡Conectado al hogar!');
+  } catch(err){
+    console.error(err);
+    showToast('Error de conexión');
+    btn.innerHTML=oldHTML; btn.disabled=false;
+  }
+}
+
+function salirHogar() {
+  if(!confirm('¿Seguro que quieres salir de este hogar?')) return;
+  houseId = null;
+  localStorage.removeItem('ekekos_house_id');
+  if(unsubSnapshot) unsubSnapshot();
+  render('ingreso');
+}
+
+// ══════════════════════════════════════════
+//  THEME
+// ══════════════════════════════════════════
+function toggleTheme(){
+  S.theme=S.theme==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',S.theme);
+  saveState();
+}
+
+// ══════════════════════════════════════════
+//  MODALS
+// ══════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+// ══════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(window._tTimer);
+  window._tTimer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+(function init(){
+  document.documentElement.setAttribute('data-theme',S.theme);
+  const now=new Date();
+  S.filters.mes=MESES[now.getMonth()];
+  
+  if (houseId) {
+    const LS = localStorage.getItem('ekekos_prod_state');
+    if (LS) S = JSON.parse(LS);
+    subscribeToHouse(houseId);
+    if(S.members.length===0) S.tab='config';
+    render(S.tab);
+  } else {
+    render('ingreso');
+  }
+})();
+</script>
+</body>
+</html>

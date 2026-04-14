@@ -1,0 +1,15 @@
+{
+  "name": "Ekekos Home",
+  "short_name": "Ekekos",
+  "start_url": "/app.html",
+  "display": "standalone",
+  "background_color": "#101415",
+  "theme_color": "#4edea3",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234edea3'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='%23101415'>💰</text></svg>",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ]
+}
