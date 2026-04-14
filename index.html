@@ -413,44 +413,61 @@ function eiHTML(g){
 const VIEWS={
 
 // ─── INGRESO ───
+// ─── INGRESO (PORTAL) ───
 ingreso:()=>{
   const hist = JSON.parse(localStorage.getItem('ekekos_history')||'[]');
   return `
 <div style="min-height:100dvh;display:flex;flex-direction:column;padding:0 24px;background:var(--bg)">
-  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;padding:40px 0">
-    <div style="text-align:center">
-      <div style="width:80px;height:80px;border-radius:24px;background:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 8px 28px rgba(78,222,163,.35)">
-        <span class="mi fill" style="font-size:40px;color:var(--on-accent)">home</span>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:40px 0">
+    <div style="text-align:center;margin-bottom:8px">
+      <div style="width:72px;height:72px;border-radius:22px;background:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 24px rgba(78,222,163,.3)">
+        <span class="mi fill" style="font-size:36px;color:var(--on-accent)">home</span>
       </div>
-      <h1 class="mf" style="font-size:32px;font-weight:800;letter-spacing:-1px">Ekekos Home</h1>
-      <p style="color:var(--outline);font-size:15px;margin-top:8px">Finanzas compartidas para tu hogar</p>
+      <h1 class="mf" style="font-size:28px;font-weight:800;letter-spacing:-1px">Ekekos Home</h1>
+      <p style="color:var(--outline);font-size:14px;margin-top:4px">Portal de Familias y Grupos</p>
     </div>
     
-    <div style="width:100%;margin-top:0px;padding:24px;background:var(--surface);border-radius:24px;text-align:center">
-      <h2 style="font-size:18px;font-weight:700;margin-bottom:16px">¿Nuevo(a) aquí?</h2>
-      <button class="btn btn-accent" onclick="crearHogar()" style="margin-bottom:12px">Crear nuevo hogar</button>
-    </div>
-
-    <div style="width:100%;padding:24px;background:var(--surface);border-radius:24px">
-      <h2 style="font-size:15px;font-weight:700;margin-bottom:12px;text-align:center;color:var(--on-surface-v)">Ya tengo un código</h2>
-      <div style="display:flex;gap:8px">
-        <input class="inp" id="in-codigo" type="text" placeholder="Ej: HK-9M2X" style="text-transform:uppercase" autocomplete="off">
-        <button class="btn btn-surface" onclick="unirseHogar(event)" style="width:auto;padding:0 20px"><span class="mi">arrow_forward</span></button>
-      </div>
-    </div>
-    
+    <!-- SECCIÓN 1: TUS FAMILIAS (Solo si existen) -->
     ${hist.length>0 ? `
-    <div style="width:100%;padding:24px;background:var(--surface);border-radius:24px">
-      <h2 style="font-size:15px;font-weight:700;margin-bottom:12px;text-align:center;color:var(--on-surface-v)">Mis Hogares Recientes</h2>
-      ${hist.map(h=>`
-        <div onclick="switchHogar('${h.code}')" style="background:var(--bg);border-radius:12px;padding:12px;display:flex;align-items:center;margin-bottom:8px;cursor:pointer">
-          <span class="mi" style="color:var(--accent);margin-right:12px">home</span>
-          <div style="flex:1"><p style="font-weight:600;font-size:14px">${h.name}</p><p style="font-size:11px;color:var(--outline)">${h.code}</p></div>
-          <span class="mi" style="color:var(--on-surface-v)">arrow_forward</span>
-        </div>
-      `).join('')}
+    <div style="width:100%;padding:20px;background:rgba(255,255,255,0.03);border:1px solid var(--outline-v);border-radius:24px">
+      <h2 style="font-size:12px;font-weight:700;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;color:var(--accent)">Tus Grupos y Familias</h2>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${hist.map(h=>`
+          <div onclick="switchHogar('${h.code}')" style="background:var(--surface);border-radius:16px;padding:14px;display:flex;align-items:center;cursor:pointer;border:1px solid transparent;transition:all .2s" onmousedown="this.style.borderColor='var(--accent)'" onmouseup="this.style.borderColor='transparent'">
+            <div style="width:40px;height:40px;border-radius:12px;background:var(--accent)20;display:flex;align-items:center;justify-content:center;margin-right:14px">
+              <span class="mi" style="color:var(--accent);font-size:20px">groups</span>
+            </div>
+            <div style="flex:1">
+              <p style="font-weight:700;font-size:15px;color:var(--on-surface)">${h.name}</p>
+              <p style="font-size:11px;color:var(--outline);font-family:monospace">${h.code}</p>
+            </div>
+            <span class="mi" style="color:var(--outline);font-size:18px">arrow_forward</span>
+          </div>
+        `).join('')}
+      </div>
     </div>
     ` : ''}
+
+    <!-- SECCIÓN 2: INGRESAR CÓDIGO -->
+    <div style="width:100%;padding:24px;background:var(--surface);border-radius:24px;border:1px solid var(--outline-v)">
+      <h2 style="font-size:13px;font-weight:700;margin-bottom:14px;color:var(--on-surface-v)">Unirse a un grupo</h2>
+      <div style="display:flex;gap:10px">
+        <div style="position:relative;flex:1">
+          <span class="mi" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--outline)">key</span>
+          <input class="inp" id="in-codigo" type="text" placeholder="Código (HK-XXXX)" style="text-transform:uppercase;padding-left:40px" autocomplete="off">
+        </div>
+        <button class="btn btn-accent" onclick="unirseHogar(event)" style="width:auto;padding:0 18px;border-radius:14px"><span class="mi">login</span></button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: CREAR NUEVA FAMILIA -->
+    <div style="width:100%;padding:20px;text-align:center">
+      <p style="font-size:13px;color:var(--outline);margin-bottom:12px">¿Quieres empezar un grupo nuevo?</p>
+      <button class="btn btn-ghost" onclick="crearHogar()" style="border-style:dashed;border-color:var(--accent);color:var(--accent)">
+        <span class="mi">add_circle</span> Crear nueva familia
+      </button>
+    </div>
+    
   </div>
 </div>`;
 },
@@ -871,6 +888,7 @@ reportes:()=>{
 },
 
 // ─── PERFIL ───
+// ─── PERFIL ───
 perfil:()=>{
   const me=S.members[S.currentUser]||{em:'👤',name:'Usuario'};
   return`
@@ -883,19 +901,36 @@ perfil:()=>{
   <div style="padding:24px 20px;text-align:center">
     <div style="width:80px;height:80px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 12px">${me.em}</div>
     <h2 class="mf" style="font-size:20px;font-weight:800">${me.name}</h2>
-    <p style="font-size:13px;color:var(--outline);margin-top:2px">Casa: ${S.house.name} · ${S.house.currency}</p>
+    <p style="font-size:13px;color:var(--outline);margin-top:2px">${S.house.name} · ${S.house.currency}</p>
   </div>
+
+  <!-- Identidad de Familia (CÓDIGO) -->
+  <div style="margin:0 20px 24px;background:linear-gradient(135deg,var(--surface-high),var(--surface));border-radius:24px;padding:20px;border:1px solid var(--outline-v);position:relative;overflow:hidden">
+    <div style="position:absolute;right:-10px;top:-10px;opacity:0.05"><span class="mi" style="font-size:100px">badge</span></div>
+    <p style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Código de Familia</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div style="background:var(--bg);padding:12px 20px;border-radius:16px;border:1px dashed var(--accent);flex:1">
+        <span class="mf" style="font-size:24px;font-weight:800;letter-spacing:2px;color:var(--on-surface)">${houseId || 'S/N'}</span>
+      </div>
+      <button class="tb-btn" style="background:var(--accent);color:var(--on-accent);width:52px;height:52px;border-radius:16px" onclick="shareCode()">
+        <span class="mi">share</span>
+      </button>
+    </div>
+    <p style="font-size:12px;color:var(--on-surface-v);margin-top:12px;line-height:1.4">Comparte este código para invitar a otros integrantes.</p>
+  </div>
+
   <!-- Integrantes -->
-  <span class="st">Integrantes</span>
-  <div class="card" style="margin:0 20px;border-radius:20px">
+  <span class="st">Integrantes en esta familia</span>
+  <div class="card" style="margin:0 20px 20px;border-radius:20px">
     ${S.members.map(m=>`<div class="sr" style="cursor:default">
       <div style="width:40px;height:40px;border-radius:50%;background:${m.color}20;display:flex;align-items:center;justify-content:center;font-size:20px">${m.em}</div>
       <div style="flex:1">
         <p style="font-size:14px;font-weight:600">${m.name}${m.id===S.currentUser?' <span style="font-size:11px;background:rgba(78,222,163,.15);color:var(--accent);padding:2px 8px;border-radius:99px;font-weight:700">tú</span>':''}</p>
-        <p style="font-size:12px;color:var(--outline)">Integrante del hogar</p>
+        <p style="font-size:12px;color:var(--outline)">Miembro del grupo</p>
       </div>
     </div>`).join('')}
   </div>
+
   <!-- Settings -->
   <span class="st" style="margin:20px 0 8px;display:block">Ajustes</span>
   <div class="card" style="margin:0 20px;border-radius:20px">
@@ -919,26 +954,16 @@ perfil:()=>{
       </div>
       <span class="mi" style="color:var(--outline);font-size:20px">chevron_right</span>
     </div>
-    <div class="sr" onclick="push('reportes')">
-      <div class="sr-icon"><span class="mi">bar_chart</span></div>
-      <div style="flex:1">
-        <p style="font-size:14px;font-weight:600">Reportes</p>
-        <p style="font-size:12px;color:var(--outline)">Análisis de gastos del hogar</p>
-      </div>
-      <span class="mi" style="color:var(--outline);font-size:20px">chevron_right</span>
-    </div>
-    <div class="sr" onclick="showToast('🔔 Próximamente')">
-      <div class="sr-icon"><span class="mi">notifications</span></div>
-      <div style="flex:1">
-        <p style="font-size:14px;font-weight:600">Notificaciones</p>
-        <p style="font-size:12px;color:var(--outline)">Push y recordatorios</p>
-      </div>
-      <span class="mi" style="color:var(--outline);font-size:20px">chevron_right</span>
-    </div>
   </div>
-  <!-- Logout -->
-  <div style="padding:20px">
-    <button class="btn btn-danger" onclick="showToast('¡Hasta pronto! 👋')"><span class="mi">logout</span>Salir de la cuenta</button>
+  
+  <!-- Acciones de Sesión -->
+  <div style="padding:24px 20px;display:flex;flex-direction:column;gap:12px">
+    <button class="btn btn-surface" onclick="salirHogar()" style="border:1.5px solid var(--outline-v)">
+      <span class="mi">swap_horiz</span> Cambiar de Familia / Salir
+    </button>
+    <button class="btn btn-danger" onclick="logoutApp()" style="opacity:0.8;font-size:13px;padding:12px">
+      <span class="mi" style="font-size:18px">logout</span> Cerrar sesión por completo
+    </button>
   </div>
 </div>`;
 },
@@ -1274,12 +1299,39 @@ async function switchHogar(code) {
   }
 }
 
+function shareCode() {
+  const code = houseId || '';
+  if(!code) return showToast('Error: No hay código');
+  const text = `¡Únete a mi hogar en Ekekos Home! 🏠\nUsa este código: ${code}`;
+  if (navigator.share) {
+    navigator.share({ title: 'Ekekos Home', text: text }).catch(() => copyToClipboard(code));
+  } else {
+    copyToClipboard(code);
+  }
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('¡Código copiado! 📋');
+  }).catch(() => {
+    showToast('Error al copiar');
+  });
+}
+
 function salirHogar() {
-  if(!confirm('¿Seguro que quieres salir de este hogar?')) return;
+  // Solo salir del hogar actual para volver al Portal, manteniendo el historial
   houseId = null;
   localStorage.removeItem('ekekos_house_id');
+  localStorage.removeItem('ekekos_prod_state');
   if(unsubSnapshot) unsubSnapshot();
+  S = JSON.parse(JSON.stringify(defaultS));
   render('ingreso');
+}
+
+function logoutApp() {
+  if(!confirm('¿Cerrar sesión por completo?\nSe borrará la lista de familias recientes de este dispositivo.')) return;
+  localStorage.clear(); // Limpieza total de la App
+  location.reload(); // Reiniciar para estado limpio
 }
 
 // ══════════════════════════════════════════
@@ -1317,9 +1369,25 @@ function showToast(msg){
   
   if (houseId) {
     const LS = localStorage.getItem('ekekos_prod_state');
-    if (LS) { S = JSON.parse(LS); S.tab='home'; S.stack=[]; }
-    subscribeToHouse(houseId);
-    if(S.members.length===0) { S.tab='config'; render('config'); } else { goTab(S.tab); }
+    if (LS) { 
+      const parsed = JSON.parse(LS);
+      // Solo restauramos si hay integración mínima válida
+      if (parsed.members && parsed.members.length > 0) {
+        S = parsed;
+        S.tab = 'home';
+        S.stack = [];
+      } else {
+        // Estado incompleto, mejor mandarlo al Portal
+        localStorage.removeItem('ekekos_house_id');
+        houseId = null;
+      }
+    }
+    if (houseId) {
+      subscribeToHouse(houseId);
+      goTab('home');
+    } else {
+      render('ingreso');
+    }
   } else {
     render('ingreso');
   }
