@@ -458,9 +458,12 @@ ingreso:()=>{
 // ─── CONFIG ───
 config:()=>`
 <div style="min-height:100dvh;display:flex;flex-direction:column;padding:0 24px;background:var(--bg)">
-  <div style="padding:20px 0 0;display:flex;align-items:center;gap:12px">
-    <button class="tb-btn" onclick="pop()"><span class="mi">arrow_back</span></button>
-    <span class="mf" style="font-size:17px;font-weight:700">Configura tu Casa</span>
+  <div style="padding:20px 0 0;display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="tb-btn" onclick="pop()"><span class="mi">arrow_back</span></button>
+      <span class="mf" style="font-size:17px;font-weight:700">Configura tu Casa</span>
+    </div>
+    <button onclick="salirHogar()" style="background:none;border:none;color:var(--error);font-size:12px;font-weight:700;text-transform:uppercase;cursor:pointer">Cancelar</button>
   </div>
   <div style="flex:1;padding:28px 0;display:flex;flex-direction:column;gap:22px">
     <div>
