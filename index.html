@@ -553,29 +553,45 @@ config:()=>`
 </div>`,
 
 // ─── QUIEN SOY ───
-quienSoy:()=>`
-<div style="min-height:100dvh;padding:40px 24px;background:var(--bg);text-align:center">
-  <div style="margin-bottom:32px">
-    <div style="width:64px;height:64px;border-radius:20px;background:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-      <span class="mi" style="font-size:32px;color:var(--on-accent)">person_search</span>
-    </div>
-    <h1 class="mf" style="font-size:24px;font-weight:800">¿Quién eres tú?</h1>
-    <p style="color:var(--outline);font-size:14px;margin-top:4px">Selecciona tu perfil en esta familia</p>
-  </div>
-  <div style="display:flex;flex-direction:column;gap:12px">
-    ${S.members.map(m=>`
-      <div onclick="setIdentity(${m.id})" style="background:var(--surface);border-radius:20px;padding:16px;display:flex;align-items:center;gap:16px;cursor:pointer;border:1px solid var(--outline-v)">
-        <div style="width:48px;height:48px;border-radius:50%;background:${m.color}20;display:flex;align-items:center;justify-content:center;font-size:24px">${m.em}</div>
-        <div style="flex:1;text-align:left">
-          <p style="font-weight:700;font-size:16px">${m.name}</p>
-          <p style="font-size:12px;color:var(--outline)">Integrante del grupo</p>
-        </div>
-        <span class="mi" style="color:var(--accent)">arrow_forward</span>
-      </div>
-    `).join('')}
-  </div>
-  <div style="margin-top:32px">
+  <div style="margin-top:32px;display:flex;flex-direction:column;gap:12px">
+     <button class="btn btn-accent" onclick="render('nuevoPerfil')">
+       <span class="mi">person_add</span>¡Soy nuevo, crear mi perfil!
+     </button>
      <button class="btn btn-ghost" onclick="salirHogar()">Cancelar / Volver</button>
+  </div>
+</div>`,
+
+// ─── REGISTRO NUEVO MIEMBRO ───
+nuevoPerfil:()=>`
+<div style="min-height:100dvh;padding:40px 24px;background:var(--bg);display:flex;flex-direction:column">
+  <div style="text-align:center;margin-bottom:32px">
+    <h1 class="mf" style="font-size:24px;font-weight:800">Crea tu Perfil</h1>
+    <p style="color:var(--outline);font-size:14px;margin-top:4px">Dinos quién eres en esta familia</p>
+  </div>
+  
+  <div style="flex:1">
+    <div style="background:var(--surface);border-radius:24px;padding:24px;border:1px solid var(--outline-v)">
+      <div style="margin-bottom:24px;text-align:center">
+         <div id="reg-emoji-preview" style="width:80px;height:80px;border-radius:50%;background:var(--accent)20;display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 12px">👱‍♀️</div>
+         <p style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase">Elige tu Emoji</p>
+         <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px">
+           ${['👩','👨','👱‍♀️','👸','🛍️','👦','👧','🧔','🧟‍♂️'].map(e=>`
+             <button onclick="document.getElementById('reg-emoji-preview').innerText='${e}'" style="background:var(--surface-high);border:none;border-radius:12px;width:44px;height:44px;font-size:20px;cursor:pointer">${e}</button>
+           `).join('')}
+         </div>
+      </div>
+      
+      <label class="lbl">¿Cómo te llamas?</label>
+      <input id="reg-name" class="inp" placeholder="Tu nombre" style="margin-bottom:24px;font-size:18px">
+      
+      <button class="btn btn-accent" onclick="confirmarNuevoMiembro()">
+        <span class="mi">check_circle</span>Confirmar y Entrar
+      </button>
+    </div>
+  </div>
+  
+  <div style="padding:20px 0;text-align:center">
+    <button class="btn btn-ghost" onclick="render('quienSoy')">Volver atrás</button>
   </div>
 </div>`,
 
@@ -1471,6 +1487,26 @@ function setIdentity(id) {
   currentUser = id;
   showToast('Identidad confirmada 👤');
   goTab('home');
+}
+
+function confirmarNuevoMiembro() {
+  const name = document.getElementById('reg-name').value.trim();
+  const em = document.getElementById('reg-emoji-preview').innerText;
+  if(!name) return showToast('Escribe tu nombre');
+  
+  const colors = ['#4edea3','#bec6e0','#ffb2b7','#ffd180','#80deea','#cf93d9'];
+  const newId = S.members.reduce((max, m) => Math.max(max, m.id), -1) + 1;
+  const newMember = {
+    id: newId,
+    name: name,
+    em: em,
+    color: colors[newId % colors.length]
+  };
+  
+  S.members.push(newMember);
+  saveState();
+  setIdentity(newId);
+  showToast(`¡Bienvenido/a ${name}! 🎉`);
 }
 
 async function processImport() {
