@@ -849,10 +849,10 @@ importar:()=>`
   </div>
   <div style="flex:1;padding:24px 0">
     <p style="font-size:13px;color:var(--outline);line-height:1.5;margin-bottom:20px">
-      Copia los datos de tu planilla y pégalos aquí. El formato debe ser:<br>
-      <code style="background:var(--surface-high);padding:2px 6px;border-radius:4px;color:var(--accent)">Fecha ; Descripción ; Monto</code>
+      Copia los datos de tu planilla y pégalos aquí. El formato de 4 columnas debe ser:<br>
+      <code style="background:var(--surface-high);padding:2px 6px;border-radius:4px;color:var(--accent)">Fecha ; Categoría ; Descripción ; Monto</code>
     </p>
-    <textarea id="import-data" class="inp" style="height:250px;font-family:monospace;font-size:12px;padding:16px;line-height:1.6" placeholder="2024-04-01 ; Supermercado ; 45000&#10;2024-04-02 ; Luz ; 12000"></textarea>
+    <textarea id="import-data" class="inp" style="height:250px;font-family:monospace;font-size:12px;padding:16px;line-height:1.6" placeholder="2024-04-01 ; Super ; Supermercado ; 45000&#10;2024-04-02 ; Cuentas ; Pago Luz ; 12000"></textarea>
     
     <div style="margin-top:20px;padding:16px;background:var(--surface);border-radius:16px;border:1px solid var(--outline-v)">
       <p style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;margin-bottom:8px">Tips de importación</p>
@@ -1569,21 +1569,34 @@ async function processImport() {
   lines.forEach(line => {
     // Soporta punto y coma, tabulador o coma
     const parts = line.split(/[;\t]/).map(p => p.trim());
-    if(parts.length >= 3) {
+    if(parts.length >= 4) {
       const fecha = parts[0];
-      const desc = parts[1];
-      const monto = parseFloat(parts[2].replace(/[$.]/g, ''));
+      const catName = parts[1].toLowerCase();
+      const desc = parts[2];
+      const montoRaw = parts[3] ? parts[3].replace(/[$.]/g, '') : "0";
+      const monto = parseFloat(montoRaw);
       
       if(!isNaN(monto)) {
+        // Mapeo inteligente de categoría
+        let catId = 'super';
+        let catEm = '🛒';
+        const found = CATS.find(c => c.label.toLowerCase().includes(catName) || c.id.includes(catName));
+        if (found) { catId = found.id; catEm = found.em; }
+
         const g = {
           id: S.nGasto++,
           desc,
           monto,
           fecha,
-          cat: 'super', // Default
+          cat: catId,
+          em: catEm,
           pagador: +currentUser,
           split: S.members.map(m => ({id: m.id, pct: Math.round(100/S.members.length)}))
         };
+        // Ajuste fino para que la suma sea exactalamente 100%
+        const totalPct = g.split.reduce((s,x)=>s+x.pct,0);
+        if(totalPct !== 100 && g.split.length > 0) g.split[0].pct += (100 - totalPct);
+
         S.gastos.unshift(g);
         added++;
       }
