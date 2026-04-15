@@ -399,10 +399,9 @@ function filtered(){
     const d=new Date(g.fecha+'T12:00:00');
     const mOk=!S.filters.mes||MESES[d.getMonth()]===S.filters.mes;
     const cOk=S.filters.cat==='todas'||g.cat===S.filters.cat;
-    // Usamos comparación de strings para evitar líos de Number vs String con los IDs grandes
-    const pOk=S.filters.person==='todos' || 
-              String(g.pagador) === String(S.filters.person) || 
-              g.split.some(s => String(s.id) === String(S.filters.person));
+    // FILTRO DEFINITIVO: Si hay persona seleccionada, buscamos solo lo que ELLA PAGÓ
+    // Si no hay persona seleccionada (todos), incluimos todo.
+    const pOk=S.filters.person==='todos' || String(g.pagador) === String(S.filters.person);
     return mOk&&cOk&&pOk;
   }).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
 }
@@ -718,10 +717,13 @@ gastos:()=>{
   const f=filtered();
   const total=f.reduce((s,g)=>s+g.monto,0);
   const miParte=f.reduce((s,g)=>s+getMiParte(g),0);
-  const pagadoPorMi=f.filter(g=>g.pagador===+currentUser).reduce((s,g)=>s+g.monto,0);
+  
+  // Calculamos cuánto pagó la persona filtrada (o yo, si no hay filtro)
+  const filterId = S.filters.person === 'todos' ? currentUser : S.filters.person;
+  const pagadoPorFilter = f.filter(g => String(g.pagador) === String(filterId)).reduce((s,g) => s+g.monto, 0);
 
   const isFilterActive = S.filters.person!=='todos'||S.filters.cat!=='todas';
-  const personName = S.filters.person!=='todos' ? (S.members.find(m=>m.id==S.filters.person)?.name || 'esa persona') : '';
+  const personName = S.filters.person!=='todos' ? (S.members.find(m=>String(m.id)===String(S.filters.person))?.name || 'Persona') : '';
 
   // Group by date
   let listHTML='';
@@ -765,12 +767,12 @@ gastos:()=>{
   <!-- Total bar -->
   <div style="margin:0 20px 12px;background:var(--surface);border-radius:16px;padding:16px;display:flex;justify-content:space-between;align-items:center;border:1px solid ${isFilterActive?'var(--accent)60':'transparent'}">
     <div>
-      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.person==='todos'?'Total filtrado':'Responsabilidad de '+personName}</p>
+      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.person==='todos'?'Gasto Total':'Gastado por '+personName}</p>
       <p class="mf" style="font-size:24px;font-weight:800">${fmt(total)}</p>
     </div>
     <div style="text-align:right">
       <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.person==='todos'?'Tu parte':'Realmente Pagó '+personName}</p>
-      <p class="mf" style="font-size:22px;font-weight:800;color:var(--accent)">${fmt(S.filters.person==='todos'?miParte:pagadoPorMi)}</p>
+      <p class="mf" style="font-size:22px;font-weight:800;color:var(--accent)">${fmt(S.filters.person==='todos'?miParte:pagadoPorFilter)}</p>
     </div>
   </div>
   <!-- List -->
