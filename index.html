@@ -393,7 +393,7 @@ function render(view,data={}){
 // ══════════════════════════════════════════
 function fmt(n){return'$'+Math.round(n).toLocaleString('es-CL')}
 function fmtD(d){const dt=new Date(d+'T12:00:00');return dt.toLocaleDateString('es-CL',{day:'numeric',month:'short'})}
-function getMiParte(g){const s=g.split.find(x=>x.id===S.currentUser);return s?g.monto*s.pct/100:0}
+function getMiParte(g){const s=g.split.find(x=>x.id===+currentUser);return s?g.monto*s.pct/100:0}
 function filtered(){
   return S.gastos.filter(g=>{
     const d=new Date(g.fecha+'T12:00:00');
@@ -422,14 +422,6 @@ function calcBalances(){
   S.pagos.forEach(p=>{
     if(!bal[p.de])bal[p.de]={};
     bal[p.de][p.a]=Math.max(0,(bal[p.de][p.a]||0)-p.monto);
-  });
-  // Cuotas de Créditos (Deuda pendiente que debe sumarse al neteo)
-  S.creditos.forEach(c=>{
-    const saldo = c.montoTotal * (c.cuotas - c.cuotasPagadas) / c.cuotas;
-    if(saldo > 0) {
-      if(!bal[c.a]) bal[c.a]={};
-      bal[c.a][c.de] = (bal[c.a][c.de]||0) + saldo;
-    }
   });
   return bal;
 }
@@ -717,6 +709,7 @@ home:()=>{
 // ─── GASTOS ───
 gastos:()=>{
   const now=new Date();
+  currentUser = localStorage.getItem(`ekekos_my_id_${houseId}`);
   const months=[...new Set(S.gastos.map(g=>MESES[new Date(g.fecha+'T12:00:00').getMonth()]))];
   if(!S.filters.mes||!months.includes(S.filters.mes))S.filters.mes=months[0]||null;
   const f=filtered();
@@ -725,6 +718,8 @@ gastos:()=>{
   const pagadoPorMi=f.filter(g=>g.pagador===+currentUser).reduce((s,g)=>s+g.monto,0);
 
   const isFilterActive = S.filters.person!=='todos'||S.filters.cat!=='todas';
+  const personName = S.filters.person!=='todos' ? (S.members.find(m=>m.id==S.filters.person)?.name || 'esa persona') : '';
+
   // Group by date
   let listHTML='';
   if(f.length===0){listHTML='<div class="empty"><div class="em">🔍</div><p>Sin gastos con este filtro.</p></div>'}
@@ -767,11 +762,11 @@ gastos:()=>{
   <!-- Total bar -->
   <div style="margin:0 20px 12px;background:var(--surface);border-radius:16px;padding:16px;display:flex;justify-content:space-between;align-items:center;border:1px solid ${isFilterActive?'var(--accent)60':'transparent'}">
     <div>
-      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.person==='todos'?'Total filtrado':'Gastó esa persona'}</p>
+      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.person==='todos'?'Total filtrado':'Responsabilidad de '+personName}</p>
       <p class="mf" style="font-size:24px;font-weight:800">${fmt(total)}</p>
     </div>
     <div style="text-align:right">
-      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.person==='todos'?'Tu parte':'Pagó esa persona'}</p>
+      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.person==='todos'?'Tu parte':'Realmente Pagó '+personName}</p>
       <p class="mf" style="font-size:22px;font-weight:800;color:var(--accent)">${fmt(S.filters.person==='todos'?miParte:pagadoPorMi)}</p>
     </div>
   </div>
@@ -1244,7 +1239,8 @@ function openCreditoModal(){
   const opts=S.members.map(m=>`<option value="${m.id}">${m.em} ${m.name}</option>`).join('');
   document.getElementById('c-de').innerHTML=opts;
   document.getElementById('c-a').innerHTML=opts;
-  document.getElementById('c-a').value=(S.currentUser+1)%S.members.length;
+  document.getElementById('c-de').value=+currentUser;
+  document.getElementById('c-a').value=(+currentUser+1)%S.members.length;
   ['c-monto','c-desc','c-cuotas'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('c-fecha').value=new Date().toISOString().split('T')[0];
   openModal('m-credito');
@@ -1282,8 +1278,8 @@ function openPagoModal(){
   const opts=S.members.map(m=>`<option value="${m.id}">${m.em} ${m.name}</option>`).join('');
   document.getElementById('p-de').innerHTML=opts;
   document.getElementById('p-a').innerHTML=opts;
-  document.getElementById('p-de').value=S.currentUser;
-  document.getElementById('p-a').value=(S.currentUser+1)%S.members.length;
+  document.getElementById('p-de').value=+currentUser;
+  document.getElementById('p-a').value=(+currentUser+1)%S.members.length;
   document.getElementById('p-monto').value='';
   document.getElementById('p-nota').value='';
   openModal('m-pago');
@@ -1399,7 +1395,7 @@ function removeMember(idx){
   if(S.members.length <= 1) { showToast('Debe quedar mínimo 1 integrante'); return; }
   S.members.splice(idx,1);
   S.members.forEach((m,i)=>m.id=i);
-  if(S.currentUser>=S.members.length)S.currentUser=0;
+  if(+currentUser>=S.members.length)currentUser=0;
   saveState();
   renderConfigMembers();
 }
@@ -1482,6 +1478,8 @@ async function switchHogar(code) {
     if (!check.exists) { showToast('Hogar ya no existe'); return; }
     houseId = code;
     localStorage.setItem('ekekos_house_id', houseId);
+    // Al cambiar de casa, forzamos login si no hay identidad guardada para ESTA casa
+    currentUser = localStorage.getItem(`ekekos_my_id_${houseId}`);
     S = check.data();
     subscribeToHouse(houseId);
     goTab('home');
