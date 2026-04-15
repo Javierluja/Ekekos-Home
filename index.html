@@ -409,6 +409,7 @@ function calcBalances(){
   const bal={};
   S.members.forEach(m=>S.members.forEach(n=>{if(m.id!==n.id){if(!bal[m.id])bal[m.id]={};bal[m.id][n.id]=0}}));
   const myId = +currentUser;
+  // Gastos
   S.gastos.forEach(g=>{
     g.split.forEach(s=>{
       if(s.id!==g.pagador){
@@ -417,9 +418,18 @@ function calcBalances(){
       }
     });
   });
+  // Pagos manuales (Neteo)
   S.pagos.forEach(p=>{
     if(!bal[p.de])bal[p.de]={};
     bal[p.de][p.a]=Math.max(0,(bal[p.de][p.a]||0)-p.monto);
+  });
+  // Cuotas de Créditos (Deuda pendiente que debe sumarse al neteo)
+  S.creditos.forEach(c=>{
+    const saldo = c.montoTotal * (c.cuotas - c.cuotasPagadas) / c.cuotas;
+    if(saldo > 0) {
+      if(!bal[c.a]) bal[c.a]={};
+      bal[c.a][c.de] = (bal[c.a][c.de]||0) + saldo;
+    }
   });
   return bal;
 }
@@ -675,9 +685,9 @@ home:()=>{
   <div style="margin:20px 0 0">
     <span class="st">Neteo entre integrantes</span>
     <div style="padding:0 20px;display:flex;flex-direction:column;gap:8px">
-      ${S.members.filter(m=>m.id!==S.currentUser).map(m=>{
-        const iowe=(bal[S.currentUser]?.[m.id]||0);
-        const oweme=(bal[m.id]?.[S.currentUser]||0);
+      ${S.members.filter(m=>m.id!==+currentUser).map(m=>{
+        const iowe=(bal[+currentUser]?.[m.id]||0);
+        const oweme=(bal[m.id]?.[+currentUser]||0);
         const net=oweme-iowe;
         const pos=net>=0;
         return`<div style="display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:14px;padding:14px">
@@ -712,6 +722,9 @@ gastos:()=>{
   const f=filtered();
   const total=f.reduce((s,g)=>s+g.monto,0);
   const miParte=f.reduce((s,g)=>s+getMiParte(g),0);
+  const pagadoPorMi=f.filter(g=>g.pagador===+currentUser).reduce((s,g)=>s+g.monto,0);
+
+  const isFilterActive = S.filters.person!=='todos'||S.filters.cat!=='todas';
   // Group by date
   let listHTML='';
   if(f.length===0){listHTML='<div class="empty"><div class="em">🔍</div><p>Sin gastos con este filtro.</p></div>'}
@@ -752,14 +765,14 @@ gastos:()=>{
     </div>
   </div>
   <!-- Total bar -->
-  <div style="margin:0 20px 12px;background:var(--surface);border-radius:16px;padding:16px;display:flex;justify-content:space-between;align-items:center">
+  <div style="margin:0 20px 12px;background:var(--surface);border-radius:16px;padding:16px;display:flex;justify-content:space-between;align-items:center;border:1px solid ${isFilterActive?'var(--accent)60':'transparent'}">
     <div>
-      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Total</p>
+      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.person==='todos'?'Total filtrado':'Gastó esa persona'}</p>
       <p class="mf" style="font-size:24px;font-weight:800">${fmt(total)}</p>
     </div>
     <div style="text-align:right">
-      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Tu parte</p>
-      <p class="mf" style="font-size:22px;font-weight:800;color:var(--accent)">${fmt(miParte)}</p>
+      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.person==='todos'?'Tu parte':'Pagó esa persona'}</p>
+      <p class="mf" style="font-size:22px;font-weight:800;color:var(--accent)">${fmt(S.filters.person==='todos'?miParte:pagadoPorMi)}</p>
     </div>
   </div>
   <!-- List -->
@@ -913,8 +926,8 @@ creditos:()=>{
   let debo=0,medeben=0;
   S.creditos.forEach(c=>{
     const saldo=c.montoTotal*(c.cuotas-c.cuotasPagadas)/c.cuotas;
-    if(c.a===S.currentUser)debo+=saldo;
-    if(c.de===S.currentUser)medeben+=saldo;
+    if(c.a===+currentUser)debo+=saldo;
+    if(c.de===+currentUser)medeben+=saldo;
   });
   const cuotaHTML=(c)=>{
     const lender=S.members[c.de]||{em:'?',name:'?'};
@@ -922,8 +935,8 @@ creditos:()=>{
     const cuotaMonto=c.montoTotal/c.cuotas;
     const saldo=c.montoTotal*(c.cuotas-c.cuotasPagadas)/c.cuotas;
     const pct=c.cuotasPagadas/c.cuotas*100;
-    const iAmB=c.a===S.currentUser;
-    const involved=c.de===S.currentUser||c.a===S.currentUser;
+    const iAmB=c.a===+currentUser;
+    const involved=c.de===+currentUser||c.a===+currentUser;
     const done=c.cuotasPagadas>=c.cuotas;
     return`<div class="cc">
       <div style="padding:20px">
@@ -1058,7 +1071,7 @@ perfil:()=>{
     ${S.members.map(m=>`<div class="sr" style="cursor:default">
       <div style="width:40px;height:40px;border-radius:50%;background:${m.color}20;display:flex;align-items:center;justify-content:center;font-size:20px">${m.em}</div>
       <div style="flex:1">
-        <p style="font-size:14px;font-weight:600">${m.name}${m.id===S.currentUser?' <span style="font-size:11px;background:rgba(78,222,163,.15);color:var(--accent);padding:2px 8px;border-radius:99px;font-weight:700">tú</span>':''}</p>
+        <p style="font-size:14px;font-weight:600">${m.name}${m.id===+currentUser?' <span style="font-size:11px;background:rgba(78,222,163,.15);color:var(--accent);padding:2px 8px;border-radius:99px;font-weight:700">tú</span>':''}</p>
         <p style="font-size:12px;color:var(--outline)">Miembro del grupo</p>
       </div>
     </div>`).join('')}
@@ -1131,7 +1144,7 @@ function initAgregar(){
   const today=new Date().toISOString().split('T')[0];
   const f=document.getElementById('a-fecha');
   if(f)f.value=today;
-  S.selCat='super'; S.selPagador=S.currentUser;
+  S.selCat='super'; S.selPagador=+currentUser;
   const n=S.members.length;
   const eq=Math.floor(100/n);
   S.splitPcts={};
@@ -1528,6 +1541,24 @@ function confirmarNuevoMiembro() {
   saveState();
   setIdentity(newId);
   showToast(`¡Bienvenido/a ${name}! 🎉`);
+}
+
+function pagarCuota(id) {
+  const c = S.creditos.find(x => x.id === id);
+  if(!c) return;
+  if(c.cuotasPagadas >= c.cuotas) return showToast('Crédito ya pagado');
+  
+  const cuotaMonto = c.montoTotal / c.cuotas;
+  const cuotaNum = c.cuotasPagadas + 1;
+  
+  if(!confirm(`¿Registrar pago de cuota ${cuotaNum}/${c.cuotas} por ${fmt(cuotaMonto)}?`)) return;
+  
+  c.cuotasPagadas++;
+  // También lo registramos como un "Pago" manual interno para que afecte el neteo si es necesario 
+  // (Aunque calcBalances ya lo maneja al mirar c.cuotasPagadas)
+  saveState();
+  showToast('¡Pago registrado! 💸');
+  render('creditos');
 }
 
 async function processImport() {
