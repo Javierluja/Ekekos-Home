@@ -426,7 +426,7 @@ function calcBalances(){
   return bal;
 }
 function eiHTML(g){
-  const p=S.members[g.pagador]||{em:'?',name:'?'};
+  const p=S.members.find(m=>m.id===g.pagador)||{em:'?',name:'?'};
   const mp=getMiParte(g);
   return`<div class="ei" onclick="push('detalle',{id:${g.id}})">
     <div class="ei-icon">${g.em}</div>
@@ -621,7 +621,7 @@ nuevoPerfil:()=>`
 // ─── HOME ───
 home:()=>{
   currentUser = localStorage.getItem(`ekekos_my_id_${houseId}`);
-  const me=S.members[+currentUser]||{em:'👤',name:'Usuario'};
+  const me=S.members.find(m=>m.id===+currentUser)||{em:'👤',name:'Usuario'};
   const now=new Date();
   const gastosM=S.gastos.filter(g=>{const d=new Date(g.fecha+'T12:00:00');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
   const total=gastosM.reduce((s,g)=>s+g.monto,0);
@@ -756,7 +756,7 @@ gastos:()=>{
     <span class="st">Persona</span>
     <div class="scroll-x" id="f-per">
       <button class="chip ${S.filters.person==='todos'?'on':''}" onclick="setF('person','todos',this)">Todos</button>
-      ${S.members.map(m=>`<button class="chip ${S.filters.person==m.id?'on':''}" onclick="setF('person','${m.id}',this)">${m.em} ${m.name}</button>`).join('')}
+      ${S.members.map(m=>`<button class="chip ${S.filters.person==m.id?'on':''}" onclick="setF('person',${m.id},this)">${m.em} ${m.name}</button>`).join('')}
     </div>
   </div>
   <!-- Total bar -->
@@ -871,15 +871,19 @@ importar:()=>`
 detalle:(data)=>{
   const g=S.gastos.find(x=>x.id===data.id);
   if(!g)return'<div class="empty"><div class="em">❌</div><p>No encontrado</p></div>';
-  const p=S.members[g.pagador]||{em:'?',name:'?'};
+  const p=S.members.find(m=>m.id===g.pagador)||{em:'?',name:'?'};
   const mp=getMiParte(g);
   const cat=CATS.find(c=>c.id===g.cat)||{label:g.cat};
+  const canEdit = g.pagador === +currentUser;
   return`
 <div style="min-height:100dvh;background:var(--bg);display:flex;flex-direction:column">
   <div class="topbar">
     <button class="tb-btn" onclick="pop()"><span class="mi">arrow_back</span></button>
     <span class="tb-title">Detalle</span>
-    <button class="tb-btn" onclick="delGasto(${g.id})"><span class="mi" style="color:var(--error)">delete</span></button>
+    <div style="display:flex;gap:8px">
+      ${canEdit?`<button class="tb-btn" onclick="push('agregar',{editId:${g.id}})"><span class="mi">edit</span></button>`:''}
+      <button class="tb-btn" onclick="delGasto(${g.id})"><span class="mi" style="color:var(--error)">delete</span></button>
+    </div>
   </div>
   <div style="flex:1;padding:20px;overflow-y:auto">
     <div style="text-align:center;padding:24px 0 28px">
@@ -925,8 +929,8 @@ creditos:()=>{
     if(c.de===+currentUser)medeben+=saldo;
   });
   const cuotaHTML=(c)=>{
-    const lender=S.members[c.de]||{em:'?',name:'?'};
-    const borrower=S.members[c.a]||{em:'?',name:'?'};
+    const lender=S.members.find(m=>m.id===c.de)||{em:'?',name:'?'};
+    const borrower=S.members.find(m=>m.id===c.a)||{em:'?',name:'?'};
     const cuotaMonto=c.montoTotal/c.cuotas;
     const saldo=c.montoTotal*(c.cuotas-c.cuotasPagadas)/c.cuotas;
     const pct=c.cuotasPagadas/c.cuotas*100;
@@ -1132,18 +1136,34 @@ perfil:()=>{
 
 };// end VIEWS
 
-// ══════════════════════════════════════════
-//  AGREGAR GASTO LOGIC
+// ─── AGREGAR / EDITAR GASTO LOGIC ───
 // ══════════════════════════════════════════
 function initAgregar(){
+  const stack = S.stack[S.stack.length-1];
+  const editId = stack?.data?.editId;
+  const g = editId ? S.gastos.find(x=>x.id===editId) : null;
+
   const today=new Date().toISOString().split('T')[0];
   const f=document.getElementById('a-fecha');
-  if(f)f.value=today;
-  S.selCat='super'; S.selPagador=+currentUser;
-  const n=S.members.length;
-  const eq=Math.floor(100/n);
-  S.splitPcts={};
-  S.members.forEach((m,i)=>S.splitPcts[m.id]=eq+(i===0?100-eq*n:0));
+  if(f) f.value = g ? g.fecha : today;
+  
+  if(g) {
+    document.getElementById('a-monto').value = g.monto;
+    document.getElementById('a-desc').value = g.desc;
+    S.selCat = g.cat;
+    S.selPagador = g.pagador;
+    S.splitPcts = {};
+    g.split.forEach(s => S.splitPcts[s.id] = s.pct);
+    // Asegurar que integrantes sin split tengan 0
+    S.members.forEach(m => { if(S.splitPcts[m.id]===undefined) S.splitPcts[m.id]=0; });
+  } else {
+    S.selCat='super'; S.selPagador=+currentUser;
+    const n=S.members.length;
+    const eq = n > 0 ? Math.floor(100/n) : 100;
+    S.splitPcts={};
+    S.members.forEach((m,i)=>S.splitPcts[m.id]=eq+(i===0?100-eq*n:0));
+  }
+  
   renderSplit();
   updatePreview();
 }
@@ -1202,14 +1222,25 @@ function saveGasto(){
   const fecha=document.getElementById('a-fecha')?.value;
   if(!monto||monto<=0){showToast('Ingresa un monto');return;}
   const cat=CATS.find(c=>c.id===S.selCat)||CATS[0];
-  if(!desc) desc=cat.label; // Make description optional
+  if(!desc) desc=cat.label;
   const tot=S.members.reduce((s,m)=>s+(parseInt(document.getElementById('pct-'+m.id)?.value)||0),0);
   if(tot!==100){showToast('Los porcentajes deben sumar 100%');return;}
   const split=S.members.map(m=>({id:m.id,pct:parseInt(document.getElementById('pct-'+m.id)?.value||0)})).filter(s=>s.pct>0);
   
-  S.gastos.unshift({id:S.nGasto++,desc,cat:S.selCat,em:cat.em,monto,fecha,pagador:S.selPagador,split});
+  const stack = S.stack[S.stack.length-1];
+  const editId = stack?.data?.editId;
+
+  if(editId) {
+    const idx = S.gastos.findIndex(x=>x.id===editId);
+    if(idx!==-1) {
+      S.gastos[idx] = {...S.gastos[idx], desc, cat:S.selCat, em:cat.em, monto, fecha, pagador:S.selPagador, split};
+      showToast('Gasto actualizado ✅');
+    }
+  } else {
+    S.gastos.unshift({id:S.nGasto++,desc,cat:S.selCat,em:cat.em,monto,fecha,pagador:S.selPagador,split});
+    showToast('¡Gasto guardado! ✅');
+  }
   saveState();
-  showToast('¡Gasto guardado! ✅');
   pop();
 }
 
@@ -1387,17 +1418,21 @@ function addMember(){
   const EMOJIS=['👩','👨','👱‍♀️','👸','🛍️','👦','👧','🧑','🧔','🧟‍♂️','👴','👵'];
   const COLORS=['#4edea3','#bec6e0','#ffb2b7','#ffd180','#80deea','#cf93d9'];
   const i=S.members.length;
-  S.members.push({id:i,name:'Integrante '+(i+1),em:EMOJIS[i%EMOJIS.length],color:COLORS[i%COLORS.length]});
+  // Usamos un ID único que nunca cambie
+  const newId = Date.now();
+  S.members.push({id:newId, name:'Integrante '+(i+1), em:EMOJIS[i%EMOJIS.length], color:COLORS[i%COLORS.length]});
   saveState();
   renderConfigMembers();
 }
 function removeMember(idx){
   if(S.members.length <= 1) { showToast('Debe quedar mínimo 1 integrante'); return; }
-  S.members.splice(idx,1);
-  S.members.forEach((m,i)=>m.id=i);
-  if(+currentUser>=S.members.length)currentUser=0;
-  saveState();
-  renderConfigMembers();
+  const memberToDelete = S.members[idx];
+  if(confirm(`¿Estás seguro de eliminar a ${memberToDelete.name}? Sus gastos antiguos se mantendrán pero figurará como una identidad ausente.`)) {
+    S.members.splice(idx,1);
+    // NO re-indexamos IDs. Los dejamos tal cual.
+    saveState();
+    renderConfigMembers();
+  }
 }
 function saveConfig(){
   const n=(document.getElementById('cfg-name')?.value||'').trim() || 'Mi Familia';
