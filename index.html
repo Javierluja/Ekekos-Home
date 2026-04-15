@@ -399,7 +399,10 @@ function filtered(){
     const d=new Date(g.fecha+'T12:00:00');
     const mOk=!S.filters.mes||MESES[d.getMonth()]===S.filters.mes;
     const cOk=S.filters.cat==='todas'||g.cat===S.filters.cat;
-    const pOk=S.filters.person==='todos'||g.pagador===+S.filters.person||g.split.some(s=>s.id===+S.filters.person);
+    // Usamos comparación de strings para evitar líos de Number vs String con los IDs grandes
+    const pOk=S.filters.person==='todos' || 
+              String(g.pagador) === String(S.filters.person) || 
+              g.split.some(s => String(s.id) === String(S.filters.person));
     return mOk&&cOk&&pOk;
   }).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
 }
