@@ -794,6 +794,35 @@ agregar:()=>{
 },
 
 // ─── DETALLE ───
+// ─── IMPORTAR ───
+importar:()=>`
+<div style="min-height:100dvh;display:flex;flex-direction:column;padding:0 24px;background:var(--bg)">
+  <div class="topbar" style="margin:0 -24px;padding:16px 24px">
+    <button class="tb-btn" onclick="pop()"><span class="mi">arrow_back</span></button>
+    <span class="tb-title">Importar de AppSheet</span>
+    <div style="width:40px"></div>
+  </div>
+  <div style="flex:1;padding:24px 0">
+    <p style="font-size:13px;color:var(--outline);line-height:1.5;margin-bottom:20px">
+      Copia los datos de tu planilla y pégalos aquí. El formato debe ser:<br>
+      <code style="background:var(--surface-high);padding:2px 6px;border-radius:4px;color:var(--accent)">Fecha ; Descripción ; Monto</code>
+    </p>
+    <textarea id="import-data" class="inp" style="height:250px;font-family:monospace;font-size:12px;padding:16px;line-height:1.6" placeholder="2024-04-01 ; Supermercado ; 45000&#10;2024-04-02 ; Luz ; 12000"></textarea>
+    
+    <div style="margin-top:20px;padding:16px;background:var(--surface);border-radius:16px;border:1px solid var(--outline-v)">
+      <p style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;margin-bottom:8px">Tips de importación</p>
+      <ul style="font-size:12px;color:var(--outline);padding-left:16px;display:flex;flex-direction:column;gap:6px">
+        <li>Usa punto y coma (;) o Tabulador entre columnas.</li>
+        <li>La fecha debe ser YYYY-MM-DD.</li>
+        <li>Los gastos se asignarán a ti como pagador y se dividirán en partes iguales entre todos.</li>
+      </ul>
+    </div>
+  </div>
+  <div style="padding-bottom:48px">
+    <button class="btn btn-accent" onclick="processImport()"><span class="mi">auto_fix_high</span>Procesar e Importar</button>
+  </div>
+</div>`,
+
 detalle:(data)=>{
   const g=S.gastos.find(x=>x.id===data.id);
   if(!g)return'<div class="empty"><div class="em">❌</div><p>No encontrado</p></div>';
@@ -996,6 +1025,27 @@ perfil:()=>{
         <p style="font-size:12px;color:var(--outline)">Miembro del grupo</p>
       </div>
     </div>`).join('')}
+  </div>
+
+  <!-- Acciones Avanzadas -->
+  <span class="st" style="margin:24px 0 8px;display:block">Administración</span>
+  <div class="card" style="margin:0 20px;border-radius:20px;overflow:hidden">
+    <div class="sr" onclick="push('importar')">
+      <div class="sr-icon" style="background:var(--accent)20;color:var(--accent)"><span class="mi">upload_file</span></div>
+      <div style="flex:1">
+        <p style="font-size:14px;font-weight:600">Importar datos</p>
+        <p style="font-size:12px;color:var(--outline)">Traer de Excel o AppSheet</p>
+      </div>
+      <span class="mi" style="font-size:18px;color:var(--outline)">chevron_right</span>
+    </div>
+    <div class="sr" onclick="borrarHogarDefinitivamente()" style="border-top:1px solid var(--outline-v)">
+      <div class="sr-icon" style="background:var(--error)20;color:var(--error)"><span class="mi">delete_forever</span></div>
+      <div style="flex:1">
+        <p style="font-size:14px;font-weight:600;color:var(--error)">Eliminar este Hogar</p>
+        <p style="font-size:12px;color:var(--outline)">Borrado total de Firebase</p>
+      </div>
+      <span class="mi" style="font-size:18px;color:var(--outline)">warning</span>
+    </div>
   </div>
 
   <!-- Settings -->
@@ -1277,7 +1327,7 @@ function initConfig(){
 function renderConfigMembers(){
   const el=document.getElementById('cfg-members');
   if(!el)return;
-  const EMOJIS=['👩','👨','👱‍♀️','👸','👦','👧','🧑','🧔','🧟‍♂️'];
+  const EMOJIS=['👩','👨','👱‍♀️','👸','🛍️','👦','👧','🧑','🧔','🧟‍♂️'];
   el.innerHTML=S.members.map((m,i)=>`
     <div style="display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:14px;padding:8px 12px">
       <select class="inp" onchange="S.members[${i}].em=this.value;saveState()" style="background:var(--surface-high);color:inherit;border:1.5px solid var(--outline-v);border-radius:10px;font-size:16px;padding:2px;cursor:pointer;outline:none;width:38px;height:38px;text-align:center;display:flex;align-items:center;justify-content:center">
@@ -1288,7 +1338,7 @@ function renderConfigMembers(){
     </div>`).join('');
 }
 function addMember(){
-  const EMOJIS=['👩','👨','👱‍♀️','👸','👦','👧','🧑','🧔','🧟‍♂️','👴','👵'];
+  const EMOJIS=['👩','👨','👱‍♀️','👸','🛍️','👦','👧','🧑','🧔','🧟‍♂️','👴','👵'];
   const COLORS=['#4edea3','#bec6e0','#ffb2b7','#ffd180','#80deea','#cf93d9'];
   const i=S.members.length;
   S.members.push({id:i,name:'Integrante '+(i+1),em:EMOJIS[i%EMOJIS.length],color:COLORS[i%COLORS.length]});
@@ -1421,6 +1471,72 @@ function setIdentity(id) {
   currentUser = id;
   showToast('Identidad confirmada 👤');
   goTab('home');
+}
+
+async function processImport() {
+  const text = document.getElementById('import-data').value;
+  if(!text.trim()) return showToast('No hay datos para importar');
+  
+  const lines = text.split('\n').filter(l => l.trim());
+  let added = 0;
+  
+  lines.forEach(line => {
+    // Soporta punto y coma, tabulador o coma
+    const parts = line.split(/[;\t]/).map(p => p.trim());
+    if(parts.length >= 3) {
+      const fecha = parts[0];
+      const desc = parts[1];
+      const monto = parseFloat(parts[2].replace(/[$.]/g, ''));
+      
+      if(!isNaN(monto)) {
+        const g = {
+          id: S.nGasto++,
+          desc,
+          monto,
+          fecha,
+          cat: 'super', // Default
+          pagador: +currentUser,
+          split: S.members.map(m => ({id: m.id, pct: Math.round(100/S.members.length)}))
+        };
+        S.gastos.unshift(g);
+        added++;
+      }
+    }
+  });
+  
+  if(added > 0) {
+    saveState();
+    showToast(`¡${added} gastos importados con éxito! 🎉`);
+    goTab('home');
+  } else {
+    showToast('Formato incorrecto. Verifica los datos.');
+  }
+}
+
+async function borrarHogarDefinitivamente() {
+  if(!confirm('🚨 ATENCION: ¿Estás seguro de que quieres eliminar este hogar PARA SIEMPRE?\nEsta acción es irreversible y borrará todos los datos de Firebase.')) return;
+  if(!confirm('¿REALMENTE SEGURO? Se perderán todos los gastos y registros del grupo.')) return;
+  
+  try {
+    const code = houseId;
+    await docRef.delete();
+    
+    // Limpieza local
+    localStorage.removeItem('ekekos_house_id');
+    localStorage.removeItem('ekekos_prod_state');
+    localStorage.removeItem(`ekekos_my_id_${code}`);
+    
+    // Quitar de historial
+    let hist = JSON.parse(localStorage.getItem('ekekos_history')||'[]');
+    hist = hist.filter(x => x.code !== code);
+    localStorage.setItem('ekekos_history', JSON.stringify(hist));
+    
+    showToast('Hogar eliminado permanentemente 🗑️');
+    location.reload();
+  } catch(e) {
+    console.error(e);
+    showToast('Error al eliminar de la nube');
+  }
 }
 
 function salirHogar() {
