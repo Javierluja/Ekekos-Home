@@ -241,6 +241,8 @@ const defaultS = {
   nGasto:1,nCredito:1,nPago:1,
 };
 let houseId = localStorage.getItem('ekekos_house_id') || null;
+// Identidad local: quién soy yo en este dispositivo
+let currentUser = null; 
 const S_LS = localStorage.getItem('ekekos_prod_state');
 let S = defaultS;
 
@@ -295,6 +297,10 @@ function subscribeToHouse(code) {
       S = dbS;
       S.tab = localTab;
       S.stack = localStack;
+      
+      // Restaurar identidad local
+      if (houseId) currentUser = localStorage.getItem(`ekekos_my_id_${houseId}`);
+      
       addToHistory(code, S.house.name);
       localStorage.setItem('ekekos_prod_state', JSON.stringify(S));
       if (!isInitialLoad && typeof render === 'function' && document.getElementById('screen')) {
@@ -314,8 +320,10 @@ function saveState(){
   if(!houseId) return;
   localStorage.setItem('ekekos_prod_state', JSON.stringify(S));
   const snap = JSON.parse(JSON.stringify(S)); // clone
-  snap.tab = 'home'; // Enforce safe booting for late joiners
+  snap.tab = 'home'; 
   snap.stack = [];
+  // Jamás guardamos la identidad local en Firestore
+  delete snap.currentUser; 
   docRef.set(snap);
 }
 
@@ -356,6 +364,15 @@ function pop(){
 
 function render(view,data={}){
   const navViews=['home','gastos','creditos','perfil','reportes'];
+  
+  // Enforzar selección de identidad si estamos en el hogar pero no sabemos quiénes somos
+  if(houseId && (navViews.includes(view) || view === 'agregar')) {
+    currentUser = localStorage.getItem(`ekekos_my_id_${houseId}`);
+    if(currentUser === null) {
+      view = 'quienSoy';
+    }
+  }
+
   document.getElementById('nav').style.display=navViews.includes(view)?'flex':'none';
   const sc=document.getElementById('screen');
   sc.innerHTML='';
@@ -391,6 +408,7 @@ function greeting(){const h=new Date().getHours();return h<12?'Buenos días':h<1
 function calcBalances(){
   const bal={};
   S.members.forEach(m=>S.members.forEach(n=>{if(m.id!==n.id){if(!bal[m.id])bal[m.id]={};bal[m.id][n.id]=0}}));
+  const myId = +currentUser;
   S.gastos.forEach(g=>{
     g.split.forEach(s=>{
       if(s.id!==g.pagador){
@@ -534,18 +552,47 @@ config:()=>`
   </div>
 </div>`,
 
+// ─── QUIEN SOY ───
+quienSoy:()=>`
+<div style="min-height:100dvh;padding:40px 24px;background:var(--bg);text-align:center">
+  <div style="margin-bottom:32px">
+    <div style="width:64px;height:64px;border-radius:20px;background:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+      <span class="mi" style="font-size:32px;color:var(--on-accent)">person_search</span>
+    </div>
+    <h1 class="mf" style="font-size:24px;font-weight:800">¿Quién eres tú?</h1>
+    <p style="color:var(--outline);font-size:14px;margin-top:4px">Selecciona tu perfil en esta familia</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    ${S.members.map(m=>`
+      <div onclick="setIdentity(${m.id})" style="background:var(--surface);border-radius:20px;padding:16px;display:flex;align-items:center;gap:16px;cursor:pointer;border:1px solid var(--outline-v)">
+        <div style="width:48px;height:48px;border-radius:50%;background:${m.color}20;display:flex;align-items:center;justify-content:center;font-size:24px">${m.em}</div>
+        <div style="flex:1;text-align:left">
+          <p style="font-weight:700;font-size:16px">${m.name}</p>
+          <p style="font-size:12px;color:var(--outline)">Integrante del grupo</p>
+        </div>
+        <span class="mi" style="color:var(--accent)">arrow_forward</span>
+      </div>
+    `).join('')}
+  </div>
+  <div style="margin-top:32px">
+     <button class="btn btn-ghost" onclick="salirHogar()">Cancelar / Volver</button>
+  </div>
+</div>`,
+
 // ─── HOME ───
 home:()=>{
-  const me=S.members[S.currentUser]||{em:'👤',name:'Usuario'};
+  currentUser = localStorage.getItem(`ekekos_my_id_${houseId}`);
+  const me=S.members[+currentUser]||{em:'👤',name:'Usuario'};
   const now=new Date();
   const gastosM=S.gastos.filter(g=>{const d=new Date(g.fecha+'T12:00:00');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
   const total=gastosM.reduce((s,g)=>s+g.monto,0);
   const bal=calcBalances();
   let debo=0,medeben=0;
+  const myId = +currentUser;
   S.members.forEach(m=>{
-    if(m.id===S.currentUser)return;
-    const iowe=(bal[S.currentUser]?.[m.id]||0);
-    const oweme=(bal[m.id]?.[S.currentUser]||0);
+    if(m.id===myId)return;
+    const iowe=(bal[myId]?.[m.id]||0);
+    const oweme=(bal[m.id]?.[myId]||0);
     const net=oweme-iowe;
     if(net>0)medeben+=net; else debo+=(-net);
   });
@@ -916,10 +963,11 @@ perfil:()=>{
     <div style="width:40px"></div>
   </div>
   <!-- User -->
-  <div style="padding:24px 20px;text-align:center">
+  <div style="padding:24px 20px 12px;text-align:center">
     <div style="width:80px;height:80px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 12px">${me.em}</div>
     <h2 class="mf" style="font-size:20px;font-weight:800">${me.name}</h2>
     <p style="font-size:13px;color:var(--outline);margin-top:2px">${S.house.name} · ${S.house.currency}</p>
+    <button onclick="render('quienSoy')" style="margin-top:12px;background:var(--accent)20;color:var(--accent);border:none;padding:6px 16px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer">Cambiar de Persona</button>
   </div>
 
   <!-- Identidad de Familia (CÓDIGO) -->
@@ -1366,6 +1414,13 @@ function copyToClipboard(text) {
   }).catch(() => {
     showToast('Error al copiar');
   });
+}
+
+function setIdentity(id) {
+  localStorage.setItem(`ekekos_my_id_${houseId}`, id);
+  currentUser = id;
+  showToast('Identidad confirmada 👤');
+  goTab('home');
 }
 
 function salirHogar() {
