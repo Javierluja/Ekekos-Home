@@ -176,19 +176,22 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--accent);text-
 <div class="modal-bg" id="m-credito" onclick="if(event.target===this)closeModal('m-credito')">
   <div class="modal-sheet">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <h3 class="mf" style="font-size:18px;font-weight:800">Nuevo Crédito</h3>
+      <h3 class="mf" style="font-size:18px;font-weight:800">Gestionar Crédito</h3>
       <button class="tb-btn" onclick="closeModal('m-credito')"><span class="mi">close</span></button>
     </div>
     <div style="display:flex;flex-direction:column;gap:14px">
-      <div><label class="lbl">Prestó</label><div style="position:relative"><select class="inp" id="c-de" style="padding-left:44px"></select><span class="mi" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--outline);font-size:18px">person</span></div></div>
-      <div><label class="lbl">A</label><div style="position:relative"><select class="inp" id="c-a" style="padding-left:44px"></select><span class="mi" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--outline);font-size:18px">person</span></div></div>
-      <div><label class="lbl">Monto Total</label><input class="inp" id="c-monto" type="number" placeholder="0"></div>
-      <div><label class="lbl">Descripción</label><input class="inp" id="c-desc" type="text" placeholder="¿Para qué?"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div><label class="lbl">Cuotas</label><input class="inp" id="c-cuotas" type="number" min="1" placeholder="Ej: 6"></div>
-        <div><label class="lbl">Fecha inicio</label><input class="inp" id="c-fecha" type="date"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="lbl">Acreedor</label><select class="inp" id="c-de"></select></div>
+        <div><label class="lbl">Deudor</label><select class="inp" id="c-a"></select></div>
       </div>
-      <button class="btn btn-accent" onclick="saveCredito()"><span class="mi fill">credit_score</span>Registrar Crédito</button>
+      <div><label class="lbl">Monto Total</label><input class="inp" id="c-monto" type="number" placeholder="0"></div>
+      <div><label class="lbl">Descripción</label><input class="inp" id="c-desc" type="text" placeholder="ej. Préstamo auto..."></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="lbl">Total Cuotas</label><input class="inp" id="c-cuotas" type="number" placeholder="12"></div>
+        <div><label class="lbl">Cuotas Pagadas</label><input class="inp" id="c-pagadas" type="number" placeholder="0"></div>
+      </div>
+      <div><label class="lbl">Fecha Inicio</label><input class="inp" id="c-fecha" type="date"></div>
+      <button class="btn btn-accent" onclick="saveCredito()"><span class="mi fill">credit_score</span>Guardar Crédito</button>
     </div>
   </div>
 </div>
@@ -723,7 +726,7 @@ gastos:()=>{
   const now=new Date();
   currentUser = localStorage.getItem(`ekekos_my_id_${houseId}`);
   const months=[...new Set(S.gastos.map(g=>MESES[new Date(g.fecha+'T12:00:00').getMonth()]))];
-  if(!S.filters.mes) S.filters.mes = MESES[now.getMonth()];
+  if(!S.filters.mes) S.filters.mes = 'todos';
   const f=filtered();
   const total=f.reduce((s,g)=>s+g.monto,0);
   const miParte=f.reduce((s,g)=>s+getMiParte(g),0);
@@ -1326,11 +1329,12 @@ function openCreditoModal(id){
     document.getElementById('c-monto').value = c.montoTotal;
     document.getElementById('c-desc').value = c.desc;
     document.getElementById('c-cuotas').value = c.cuotas;
+    document.getElementById('c-pagadas').value = c.cuotasPagadas || 0;
     document.getElementById('c-fecha').value = c.fechaInicio || '';
   } else {
-    document.getElementById('c-de').value=+currentUser;
-    document.getElementById('c-a').value=(+currentUser+1)%S.members.length;
-    ['c-monto','c-desc','c-cuotas'].forEach(cid=>{const el=document.getElementById(cid);if(el)el.value='';});
+    document.getElementById('c-de').value=Number(currentUser);
+    document.getElementById('c-a').value=S.members.find(m=>Number(m.id)!==Number(currentUser))?.id || '';
+    ['c-monto','c-desc','c-cuotas','c-pagadas'].forEach(cid=>{const el=document.getElementById(cid);if(el)el.value='';});
     document.getElementById('c-fecha').value=new Date().toISOString().split('T')[0];
   }
   openModal('m-credito');
@@ -1341,6 +1345,7 @@ function saveCredito(){
   const monto=parseFloat(document.getElementById('c-monto').value);
   const desc=(document.getElementById('c-desc').value||'').trim();
   const cuotas=parseInt(document.getElementById('c-cuotas').value);
+  const pagadas=parseInt(document.getElementById('c-pagadas').value || 0);
   const fechaInicio=document.getElementById('c-fecha').value;
   if(de===a){showToast('Selecciona personas distintas');return;}
   if(!monto||monto<=0){showToast('Ingresa un monto válido');return;}
@@ -1350,11 +1355,11 @@ function saveCredito(){
   if(S.editingCreditoId) {
     const idx = S.creditos.findIndex(x => x.id === S.editingCreditoId);
     if(idx!==-1) {
-      S.creditos[idx] = {...S.creditos[idx], de, a, desc, montoTotal:monto, cuotas, fechaInicio};
+      S.creditos[idx] = {...S.creditos[idx], de, a, desc, montoTotal:monto, cuotas, cuotasPagadas:pagadas, fechaInicio};
       showToast('Crédito actualizado ✅');
     }
   } else {
-    S.creditos.push({id:S.nCredito++,de,a,desc,montoTotal:monto,cuotas,cuotasPagadas:0,fechaInicio});
+    S.creditos.push({id:S.nCredito++,de,a,desc,montoTotal:monto,cuotas,cuotasPagadas:pagadas,fechaInicio});
     showToast('¡Crédito registrado! 🤝');
   }
   
