@@ -407,29 +407,25 @@ function filtered(){
 function curMonth(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')}
 function greeting(){const h=new Date().getHours();return h<12?'Buenos días':h<18?'Buenas tardes':'Buenas noches'}
 function calcBalances(){
-  const balances = {};
-  // Forzamos que todos los IDs sean tratados como Number para evitar duplicados String/Number
-  S.members.forEach(m => balances[Number(m.id)] = 0);
+  const paid = {};
+  // Inicializar aportes
+  S.members.forEach(m => paid[Number(m.id)] = 0);
 
-  // 1. Sumar aportes (lo que cada uno pagó) y restar responsabilidad (su parte)
+  // 1. Sumar aportes puros (lo que cada uno puso de su bolsillo)
   S.gastos.forEach(g => {
     const pid = Number(g.pagador);
-    balances[pid] = (balances[pid] || 0) + g.monto;
-    g.split.forEach(s => {
-      const sid = Number(s.id);
-      balances[sid] = (balances[sid] || 0) - (g.monto * s.pct / 100);
-    });
+    paid[pid] = (paid[pid] || 0) + parseFloat(g.monto || 0);
   });
 
-  // 2. Sumar pagos manuales (transferencias de saldo)
+  // 2. Sumar/Restar aportes por pagos manuales (Saldar)
   S.pagos.forEach(p => {
     const deId = Number(p.de);
     const aId = Number(p.a);
-    balances[deId] = (balances[deId] || 0) + p.monto;
-    balances[aId] = (balances[aId] || 0) - p.monto;
+    paid[deId] = (paid[deId] || 0) + parseFloat(p.monto || 0);
+    paid[aId] = (paid[aId] || 0) - parseFloat(p.monto || 0);
   });
 
-  return balances;
+  return paid;
 }
 function eiHTML(g){
   const p=S.members.find(m=>m.id===g.pagador)||{em:'?',name:'?'};
@@ -631,12 +627,18 @@ home:()=>{
   const now=new Date();
   const gastosM=S.gastos.filter(g=>{const d=new Date(g.fecha+'T12:00:00');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
   const total=gastosM.reduce((s,g)=>s+g.monto,0);
-  const balances = calcBalances();
-  const myBalance = balances[Number(currentUser)] || 0;
-  const debo = myBalance < 0 ? Math.abs(myBalance) : 0;
-  const medeben = myBalance > 0 ? myBalance : 0;
+  const paid = calcBalances();
+  const myPaid = paid[Number(currentUser)] || 0;
+  
+  // Encontramos al otro integrante para comparar (asumiendo 2 principales)
+  const otherMember = S.members.find(m => Number(m.id) !== Number(currentUser));
+  const otherPaid = otherMember ? (paid[Number(otherMember.id)] || 0) : 0;
+  
+  const diff = myPaid - otherPaid;
+  const debo = diff < 0 ? Math.abs(diff) : 0;
+  const medeben = diff > 0 ? diff : 0;
 
-  const myId = +currentUser;
+  const myId = Number(currentUser);
   const recent=[...S.gastos].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).slice(0,3);
   const monthLbl=now.toLocaleDateString('es-CL',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
   const balanceLbl=S.pagos.length>0?'Balance Acumulado Total':'Balance de la Casa';
@@ -683,21 +685,21 @@ home:()=>{
       <button onclick="push('historialPagos')" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer">Ver Pagos</button>
     </div>
     <div style="padding:0 20px;display:flex;flex-direction:column;gap:8px">
-      ${Object.keys(balances).map(id => {
+      ${Object.keys(paid).map(id => {
         const bid = Number(id);
-        if(bid === +currentUser) return '';
-        const bal = balances[id] || 0;
-        if(Math.abs(bal) < 1) return ''; // Ignorar casi-ceros
+        if(bid === Number(currentUser)) return '';
+        const pVal = paid[id] || 0;
+        const diffRelative = myPaid - pVal;
         
         const m = S.members.find(x => x.id === bid) || {name: 'Ex-integrante', em: '👤', color: '#666'};
-        const pos = bal >= 0;
+        const iAmAhead = diffRelative > 0;
         
         return`<div style="display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:14px;padding:14px">
           <div style="width:40px;height:40px;border-radius:50%;background:${m.color}20;display:flex;align-items:center;justify-content:center;font-size:20px">${m.em}</div>
           <span style="font-weight:600;font-size:14px;flex:1">${m.name}</span>
           <div style="text-align:right">
-            <p class="mf" style="font-size:16px;font-weight:800;color:${pos?'var(--accent)':'var(--error)'}">${pos?'+':''}${fmt(bal)}</p>
-            <p style="font-size:11px;color:var(--outline)">${pos?'está a favor':'está en deuda'}</p>
+            <p class="mf" style="font-size:16px;font-weight:800;color:${iAmAhead?'var(--accent)':'var(--error)'}">${fmt(Math.abs(diffRelative))}</p>
+            <p style="font-size:11px;color:var(--outline)">${iAmAhead?'te debe':'le debes'}</p>
           </div>
         </div>`;
       }).join('')}
