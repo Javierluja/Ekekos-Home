@@ -407,24 +407,28 @@ function filtered(){
 function curMonth(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')}
 function greeting(){const h=new Date().getHours();return h<12?'Buenos días':h<18?'Buenas tardes':'Buenas noches'}
 function calcBalances(){
-  const bal={};
-  S.members.forEach(m=>S.members.forEach(n=>{if(m.id!==n.id){if(!bal[m.id])bal[m.id]={};bal[m.id][n.id]=0}}));
-  const myId = +currentUser;
-  // Gastos
-  S.gastos.forEach(g=>{
-    g.split.forEach(s=>{
-      if(s.id!==g.pagador){
-        if(!bal[s.id])bal[s.id]={};
-        bal[s.id][g.pagador]=(bal[s.id][g.pagador]||0)+g.monto*s.pct/100;
-      }
+  const balances = {};
+  S.members.forEach(m => balances[m.id] = 0);
+
+  // 1. Sumar aportes (lo que cada uno pagó) y restar responsabilidad (su parte)
+  S.gastos.forEach(g => {
+    // El pagador "suma" a su favor el monto total
+    balances[g.pagador] = (balances[g.pagador] || 0) + g.monto;
+    // Cada integrante en el split "resta" su parte
+    g.split.forEach(s => {
+      balances[s.id] = (balances[s.id] || 0) - (g.monto * s.pct / 100);
     });
   });
-  // Pagos manuales (Neteo)
-  S.pagos.forEach(p=>{
-    if(!bal[p.de])bal[p.de]={};
-    bal[p.de][p.a]=Math.max(0,(bal[p.de][p.a]||0)-p.monto);
+
+  // 2. Sumar pagos manuales (transferencias de saldo)
+  S.pagos.forEach(p => {
+    // El que paga "suma" a su favor (está saldando deuda)
+    balances[p.de] = (balances[p.de] || 0) + p.monto;
+    // El que recibe "resta" (se le está devolviendo dinero)
+    balances[p.a] = (balances[p.a] || 0) - p.monto;
   });
-  return bal;
+
+  return balances;
 }
 function eiHTML(g){
   const p=S.members.find(m=>m.id===g.pagador)||{em:'?',name:'?'};
@@ -626,16 +630,12 @@ home:()=>{
   const now=new Date();
   const gastosM=S.gastos.filter(g=>{const d=new Date(g.fecha+'T12:00:00');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
   const total=gastosM.reduce((s,g)=>s+g.monto,0);
-  const bal=calcBalances();
-  let debo=0,medeben=0;
+  const balances = calcBalances();
+  const myBalance = balances[+currentUser] || 0;
+  const debo = myBalance < 0 ? Math.abs(myBalance) : 0;
+  const medeben = myBalance > 0 ? myBalance : 0;
+
   const myId = +currentUser;
-  S.members.forEach(m=>{
-    if(m.id===myId)return;
-    const iowe=(bal[myId]?.[m.id]||0);
-    const oweme=(bal[m.id]?.[myId]||0);
-    const net=oweme-iowe;
-    if(net>0)medeben+=net; else debo+=(-net);
-  });
   const recent=[...S.gastos].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).slice(0,3);
   const monthLbl=now.toLocaleDateString('es-CL',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
   const balanceLbl=S.pagos.length>0?'Balance Acumulado Total':'Balance de la Casa';
@@ -682,17 +682,21 @@ home:()=>{
       <button onclick="push('historialPagos')" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer">Ver Pagos</button>
     </div>
     <div style="padding:0 20px;display:flex;flex-direction:column;gap:8px">
-      ${S.members.filter(m=>m.id!==+currentUser).map(m=>{
-        const iowe=(bal[+currentUser]?.[m.id]||0);
-        const oweme=(bal[m.id]?.[+currentUser]||0);
-        const net=oweme-iowe;
-        const pos=net>=0;
+      ${Object.keys(balances).map(id => {
+        const bid = Number(id);
+        if(bid === +currentUser) return '';
+        const bal = balances[id] || 0;
+        if(Math.abs(bal) < 1) return ''; // Ignorar casi-ceros
+        
+        const m = S.members.find(x => x.id === bid) || {name: 'Ex-integrante', em: '👤', color: '#666'};
+        const pos = bal >= 0;
+        
         return`<div style="display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:14px;padding:14px">
           <div style="width:40px;height:40px;border-radius:50%;background:${m.color}20;display:flex;align-items:center;justify-content:center;font-size:20px">${m.em}</div>
           <span style="font-weight:600;font-size:14px;flex:1">${m.name}</span>
           <div style="text-align:right">
-            <p class="mf" style="font-size:16px;font-weight:800;color:${pos?'var(--accent)':'var(--error)'}">${pos?'+':''}${fmt(net)}</p>
-            <p style="font-size:11px;color:var(--outline)">${pos?'te debe':'le debes'}</p>
+            <p class="mf" style="font-size:16px;font-weight:800;color:${pos?'var(--accent)':'var(--error)'}">${pos?'+':''}${fmt(bal)}</p>
+            <p style="font-size:11px;color:var(--outline)">${pos?'está a favor':'está en deuda'}</p>
           </div>
         </div>`;
       }).join('')}
