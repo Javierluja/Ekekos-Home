@@ -1819,7 +1819,7 @@ function showToast(msg){
 (function init(){
   document.documentElement.setAttribute('data-theme',S.theme);
   const now=new Date();
-  S.filters.mes=MESES[now.getMonth()];
+  S.filters.mes='todos';
   
   // Solo intentamos cargar si hay un ID y un estado local previo válido
   if (houseId) {
