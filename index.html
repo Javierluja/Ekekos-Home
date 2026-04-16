@@ -441,7 +441,9 @@ function calcBalances(){
 function eiHTML(g){
   const p=S.members.find(m=>m.id===g.pagador)||{em:'?',name:'?'};
   const mp=getMiParte(g);
-  return`<div class="ei" onclick="push('detalle',{id:${g.id}})">
+  const isEke = p.name.toLowerCase().includes('ekekita');
+  const bg = isEke ? 'background:rgba(180,160,255,0.12);' : '';
+  return`<div class="ei" onclick="push('detalle',{id:${g.id}})" style="${bg}">
     <div class="ei-icon">${g.em}</div>
     <div style="flex:1;min-width:0">
       <p style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.desc}</p>
