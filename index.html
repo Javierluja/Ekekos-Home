@@ -397,10 +397,9 @@ function getMiParte(g){const s=g.split.find(x=>x.id===+currentUser);return s?g.m
 function filtered(){
   return S.gastos.filter(g=>{
     const d=new Date(g.fecha+'T12:00:00');
-    const mOk=!S.filters.mes||MESES[d.getMonth()]===S.filters.mes;
+    // Si el filtro es 'todos', mOk es siempre true
+    const mOk=S.filters.mes==='todos'||MESES[d.getMonth()]===S.filters.mes;
     const cOk=S.filters.cat==='todas'||g.cat===S.filters.cat;
-    // FILTRO DEFINITIVO: Si hay persona seleccionada, buscamos solo lo que ELLA PAGÓ
-    // Si no hay persona seleccionada (todos), incluimos todo.
     const pOk=S.filters.person==='todos' || String(g.pagador) === String(S.filters.person);
     return mOk&&cOk&&pOk;
   }).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
@@ -639,6 +638,7 @@ home:()=>{
   });
   const recent=[...S.gastos].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).slice(0,3);
   const monthLbl=now.toLocaleDateString('es-CL',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
+  const balanceLbl=S.pagos.length>0?'Balance Acumulado Total':'Balance de la Casa';
   return`
 <div style="padding-bottom:24px">
   <div style="padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between">
@@ -667,17 +667,20 @@ home:()=>{
   <!-- Debes / Te deben -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 20px 0">
     <div class="stat" style="border-left:3px solid var(--error)">
-      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--outline)">Debes</p>
+    <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--outline)">Total que Debes</p>
       <p class="mf" style="font-size:22px;font-weight:800;color:var(--error);margin-top:4px">${fmt(debo)}</p>
     </div>
     <div class="stat" style="border-left:3px solid var(--accent)">
-      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--outline)">Te deben</p>
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--outline)">Lo que te deben</p>
       <p class="mf" style="font-size:22px;font-weight:800;color:var(--accent);margin-top:4px">${fmt(medeben)}</p>
     </div>
   </div>
   <!-- Members neteo -->
   <div style="margin:20px 0 0">
-    <span class="st">Neteo entre integrantes</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px 8px">
+      <span class="st" style="margin:0">Deudas Acumuladas</span>
+      <button onclick="push('historialPagos')" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer">Ver Pagos</button>
+    </div>
     <div style="padding:0 20px;display:flex;flex-direction:column;gap:8px">
       ${S.members.filter(m=>m.id!==+currentUser).map(m=>{
         const iowe=(bal[+currentUser]?.[m.id]||0);
@@ -713,7 +716,7 @@ gastos:()=>{
   const now=new Date();
   currentUser = localStorage.getItem(`ekekos_my_id_${houseId}`);
   const months=[...new Set(S.gastos.map(g=>MESES[new Date(g.fecha+'T12:00:00').getMonth()]))];
-  if(!S.filters.mes||!months.includes(S.filters.mes))S.filters.mes=months[0]||null;
+  if(!S.filters.mes) S.filters.mes = MESES[now.getMonth()];
   const f=filtered();
   const total=f.reduce((s,g)=>s+g.monto,0);
   const miParte=f.reduce((s,g)=>s+getMiParte(g),0);
@@ -745,6 +748,7 @@ gastos:()=>{
   <div style="padding:12px 0 0">
     <span class="st">Mes</span>
     <div class="scroll-x" id="f-mes">
+      <button class="chip ${S.filters.mes==='todos'?'on':''}" onclick="setF('mes','todos',this)">Todos</button>
       ${months.map(m=>`<button class="chip ${S.filters.mes===m?'on':''}" onclick="setF('mes','${m}',this)">${m}</button>`).join('')}
     </div>
   </div>
@@ -767,11 +771,11 @@ gastos:()=>{
   <!-- Total bar -->
   <div style="margin:0 20px 12px;background:var(--surface);border-radius:16px;padding:16px;display:flex;justify-content:space-between;align-items:center;border:1px solid ${isFilterActive?'var(--accent)60':'transparent'}">
     <div>
-      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.person==='todos'?'Gasto Total':'Gastado por '+personName}</p>
+      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.mes==='todos'?'Total Histórico':(S.filters.person==='todos'?'Gasto del Mes':'Gastado por '+personName)}</p>
       <p class="mf" style="font-size:24px;font-weight:800">${fmt(total)}</p>
     </div>
     <div style="text-align:right">
-      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.person==='todos'?'Tu parte':'Realmente Pagó '+personName}</p>
+      <p style="font-size:11px;color:var(--outline);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${S.filters.person==='todos'?'Tu parte':'Pagó '+personName}</p>
       <p class="mf" style="font-size:22px;font-weight:800;color:var(--accent)">${fmt(S.filters.person==='todos'?miParte:pagadoPorFilter)}</p>
     </div>
   </div>
@@ -953,8 +957,12 @@ creditos:()=>{
               <p style="font-size:13px;font-weight:600">${lender.name} → ${borrower.name}</p>
             </div>
           </div>
-          <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;background:${done?'rgba(78,222,163,.15)':iAmB?'rgba(255,180,171,.15)':'rgba(190,198,224,.15)'};color:${done?'var(--accent)':iAmB?'var(--error)':'var(--primary)'}">${done?'Saldado ✅':iAmB?'Lo debes':c.de===S.currentUser?'Te deben':'Entre otros'}</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            <button class="tb-btn" style="width:32px;height:32px;color:var(--outline)" onclick="openCreditoModal(${c.id})"><span class="mi" style="font-size:18px">edit</span></button>
+            <button class="tb-btn" style="width:32px;height:32px;color:var(--error)80" onclick="delCredito(${c.id})"><span class="mi" style="font-size:18px">delete</span></button>
+          </div>
         </div>
+        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;background:${done?'rgba(78,222,163,.15)':iAmB?'rgba(255,180,171,.15)':'rgba(190,198,224,.15)'};color:${done?'var(--accent)':iAmB?'var(--error)':'var(--primary)'};margin-bottom:14px;display:inline-block">${done?'Saldado ✅':iAmB?'Lo debes':String(c.de)===String(currentUser)?'Te deben':'Entre otros'}</span>
         <p style="font-weight:700;font-size:15px;margin-bottom:14px">${c.desc}</p>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
           <div style="background:var(--surface-high);border-radius:12px;padding:12px;text-align:center">
@@ -1139,6 +1147,32 @@ perfil:()=>{
 </div>`;
 },
 
+historialPagos:()=>`
+<div style="min-height:100dvh;display:flex;flex-direction:column;padding:0 24px;background:var(--bg)">
+  <div class="topbar" style="margin:0 -24px;padding:16px 24px">
+    <button class="tb-btn" onclick="pop()"><span class="mi">arrow_back</span></button>
+    <span class="tb-title">Historial de Pagos</span>
+    <div style="width:40px"></div>
+  </div>
+  <div style="flex:1;padding:24px 0">
+    <p style="font-size:13px;color:var(--outline);margin-bottom:20px">Aquí puedes ver y corregir los pagos manuales (Saldar) realizados entre integrantes.</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${S.pagos.length===0?'<div class="empty"><p>Aún no hay pagos registrados</p></div>':S.pagos.map(p=>{
+        const de=S.members.find(m=>m.id===p.de)||{em:'?',name:'?'};
+        const a=S.members.find(m=>m.id===p.a)||{em:'?',name:'?'};
+        return `<div class="card" style="padding:16px;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <p style="font-weight:700;font-size:15px">${fmt(p.monto)}</p>
+            <p style="font-size:12px;color:var(--outline)">${de.name} ➔ ${a.name}</p>
+            <p style="font-size:11px;color:var(--outline-v);margin-top:4px">${fmtD(p.fecha)}</p>
+          </div>
+          <button onclick="delPago(${p.id})" style="background:none;border:none;color:var(--error);cursor:pointer"><span class="mi">delete</span></button>
+        </div>`;
+      }).reverse().join('')}
+    </div>
+  </div>
+</div>`
+
 };// end VIEWS
 
 // ─── AGREGAR / EDITAR GASTO LOGIC ───
@@ -1271,14 +1305,27 @@ function setF(type,val,btn){
 // ══════════════════════════════════════════
 //  CRÉDITOS
 // ══════════════════════════════════════════
-function openCreditoModal(){
+function openCreditoModal(id){
   const opts=S.members.map(m=>`<option value="${m.id}">${m.em} ${m.name}</option>`).join('');
   document.getElementById('c-de').innerHTML=opts;
   document.getElementById('c-a').innerHTML=opts;
-  document.getElementById('c-de').value=+currentUser;
-  document.getElementById('c-a').value=(+currentUser+1)%S.members.length;
-  ['c-monto','c-desc','c-cuotas'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('c-fecha').value=new Date().toISOString().split('T')[0];
+  
+  const c = id ? S.creditos.find(x => x.id === id) : null;
+  S.editingCreditoId = id || null;
+
+  if(c) {
+    document.getElementById('c-de').value = c.de;
+    document.getElementById('c-a').value = c.a;
+    document.getElementById('c-monto').value = c.montoTotal;
+    document.getElementById('c-desc').value = c.desc;
+    document.getElementById('c-cuotas').value = c.cuotas;
+    document.getElementById('c-fecha').value = c.fechaInicio || '';
+  } else {
+    document.getElementById('c-de').value=+currentUser;
+    document.getElementById('c-a').value=(+currentUser+1)%S.members.length;
+    ['c-monto','c-desc','c-cuotas'].forEach(cid=>{const el=document.getElementById(cid);if(el)el.value='';});
+    document.getElementById('c-fecha').value=new Date().toISOString().split('T')[0];
+  }
   openModal('m-credito');
 }
 function saveCredito(){
@@ -1292,10 +1339,20 @@ function saveCredito(){
   if(!monto||monto<=0){showToast('Ingresa un monto válido');return;}
   if(!desc){showToast('Agrega una descripción');return;}
   if(!cuotas||cuotas<1){showToast('Ingresa número de cuotas');return;}
-  S.creditos.push({id:S.nCredito++,de,a,desc,montoTotal:monto,cuotas,cuotasPagadas:0,fechaInicio});
+  
+  if(S.editingCreditoId) {
+    const idx = S.creditos.findIndex(x => x.id === S.editingCreditoId);
+    if(idx!==-1) {
+      S.creditos[idx] = {...S.creditos[idx], de, a, desc, montoTotal:monto, cuotas, fechaInicio};
+      showToast('Crédito actualizado ✅');
+    }
+  } else {
+    S.creditos.push({id:S.nCredito++,de,a,desc,montoTotal:monto,cuotas,cuotasPagadas:0,fechaInicio});
+    showToast('¡Crédito registrado! 🤝');
+  }
+  
   saveState();
   closeModal('m-credito');
-  showToast('¡Crédito registrado! 🤝');
   render('creditos');
 }
 function pagarCuota(id){
@@ -1304,6 +1361,13 @@ function pagarCuota(id){
   c.cuotasPagadas++;
   saveState();
   showToast(`✅ Cuota ${c.cuotasPagadas}/${c.cuotas} pagada`);
+  render('creditos');
+}
+function delCredito(id){
+  if(!confirm('¿Eliminar este crédito por completo?'))return;
+  S.creditos=S.creditos.filter(x=>x.id!==id);
+  saveState();
+  showToast('Crédito eliminado');
   render('creditos');
 }
 
@@ -1332,6 +1396,13 @@ function savePago(){
   closeModal('m-pago');
   showToast('💸 Pago registrado');
   render(S.tab);
+}
+function delPago(id){
+  if(!confirm('¿Eliminar este registro de pago?'))return;
+  S.pagos=S.pagos.filter(x=>x.id!==id);
+  saveState();
+  showToast('Pago eliminado');
+  render('historialPagos');
 }
 
 // ══════════════════════════════════════════
