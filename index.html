@@ -408,24 +408,25 @@ function curMonth(){const n=new Date();return n.getFullYear()+'-'+String(n.getMo
 function greeting(){const h=new Date().getHours();return h<12?'Buenos días':h<18?'Buenas tardes':'Buenas noches'}
 function calcBalances(){
   const balances = {};
-  S.members.forEach(m => balances[m.id] = 0);
+  // Forzamos que todos los IDs sean tratados como Number para evitar duplicados String/Number
+  S.members.forEach(m => balances[Number(m.id)] = 0);
 
   // 1. Sumar aportes (lo que cada uno pagó) y restar responsabilidad (su parte)
   S.gastos.forEach(g => {
-    // El pagador "suma" a su favor el monto total
-    balances[g.pagador] = (balances[g.pagador] || 0) + g.monto;
-    // Cada integrante en el split "resta" su parte
+    const pid = Number(g.pagador);
+    balances[pid] = (balances[pid] || 0) + g.monto;
     g.split.forEach(s => {
-      balances[s.id] = (balances[s.id] || 0) - (g.monto * s.pct / 100);
+      const sid = Number(s.id);
+      balances[sid] = (balances[sid] || 0) - (g.monto * s.pct / 100);
     });
   });
 
   // 2. Sumar pagos manuales (transferencias de saldo)
   S.pagos.forEach(p => {
-    // El que paga "suma" a su favor (está saldando deuda)
-    balances[p.de] = (balances[p.de] || 0) + p.monto;
-    // El que recibe "resta" (se le está devolviendo dinero)
-    balances[p.a] = (balances[p.a] || 0) - p.monto;
+    const deId = Number(p.de);
+    const aId = Number(p.a);
+    balances[deId] = (balances[deId] || 0) + p.monto;
+    balances[aId] = (balances[aId] || 0) - p.monto;
   });
 
   return balances;
@@ -631,7 +632,7 @@ home:()=>{
   const gastosM=S.gastos.filter(g=>{const d=new Date(g.fecha+'T12:00:00');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
   const total=gastosM.reduce((s,g)=>s+g.monto,0);
   const balances = calcBalances();
-  const myBalance = balances[+currentUser] || 0;
+  const myBalance = balances[Number(currentUser)] || 0;
   const debo = myBalance < 0 ? Math.abs(myBalance) : 0;
   const medeben = myBalance > 0 ? myBalance : 0;
 
